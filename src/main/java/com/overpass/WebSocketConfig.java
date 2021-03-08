@@ -17,7 +17,8 @@ public class WebSocketConfig extends AbstractWebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/websocket").setAllowedOrigins("http://localhost:3000").withSockJS();
+        //registry.addEndpoint("/websocket").setAllowedOrigins("http://localhost:3000").withSockJS();
+    	registry.addEndpoint("/websocket").setAllowedOrigins("http://env-6785435.th.app.ruk-com.cloud").withSockJS();
     }
 
 }
