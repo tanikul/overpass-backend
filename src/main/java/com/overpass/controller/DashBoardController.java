@@ -36,9 +36,6 @@ public class DashBoardController {
 	@GetMapping("/test")
 	@ResponseBody
 	public Dashboard test() throws JsonMappingException, JsonProcessingException{
-		
-		
-		
 		return dashboardService.getDataDashBoard();
 	}
 }

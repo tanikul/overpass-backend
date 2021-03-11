@@ -76,9 +76,9 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 			sql.append("sum(if(month(effective_date) = 10, 1, 0)) AS Oct, ");
 			sql.append("sum(if(month(effective_date) = 11, 1, 0)) AS Nov, ");
 			sql.append("sum(if(month(effective_date) = 12, 1, 0)) AS `Dec` ");
-			sql.append("from overpass_status o where status = ?");
+			sql.append("from overpass_status o where status = ? and active = 'Y'");
 			
-			return jdbcTemplate.queryForMap(sql.toString(), new Object[] { status });
+			return jdbcTemplate.queryForMap(sql.toString(), new Object[] { status.name() });
 		} catch (EmptyResultDataAccessException e) {
 	        return null;
 	    }	
@@ -88,8 +88,8 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 	public Map<String, Object> countOverpassAllByStatus(StatusLight status) {
 		StringBuilder sql = new StringBuilder();
 		try {
-			sql.append("select (select effective_date from overpass_status where status = ? order by effective_date desc limit 1) effective_date, count(a.overpass_id) cnt from	(select overpass_id from overpass_status where status = ? group by overpass_id) a");
-			return jdbcTemplate.queryForMap(sql.toString(), new Object[] { status, status });
+			sql.append("select (select effective_date from overpass_status where status = ? and active = 'Y' order by effective_date desc limit 1) effective_date, count(a.overpass_id) cnt from	(select overpass_id from overpass_status where status = ? and active = 'Y' group by overpass_id) a");
+			return jdbcTemplate.queryForMap(sql.toString(), new Object[] { status.name(), status.name() });
 		} catch (EmptyResultDataAccessException e) {
 	        return null;
 	    }catch(Exception ex) {

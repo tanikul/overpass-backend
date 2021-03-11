@@ -26,10 +26,9 @@ public class SchedulerTask {
 
     private static SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 30000)
     public void sendMessageToClient() {
-    	if(dashboardService.validateOverpass()) {
-    		this.template.convertAndSend("/topic/greetings", dashboardService.getDataDashBoard());
-    	}
+    	dashboardService.validateOverpass();
+    	this.template.convertAndSend("/topic/greetings", dashboardService.getDataDashBoard());
     }
 }

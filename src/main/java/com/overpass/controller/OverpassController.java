@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.overpass.model.LightBulb;
 import com.overpass.model.Overpass;
 import com.overpass.model.ResponseDataTable;
 import com.overpass.model.SearchDataTable;
@@ -68,5 +69,19 @@ public class OverpassController {
 			@RequestParam(value = "amphurId", required = false) Integer amphurId,
 			@RequestParam(value = "districtId", required = false) Integer districtId) throws Exception{
 		return overpassService.getOverpasses(provinceId, amphurId, districtId);
+	}
+	
+	@PostMapping("/searchOverpassesByUserId")
+	public List<Overpass> searchOverpassesByUserId(@RequestParam(value = "provinceId", required = false) Integer provinceId, 
+			@RequestParam(value = "amphurId", required = false) Integer amphurId,
+			@RequestParam(value = "districtId", required = false) Integer districtId,
+			@RequestParam(value = "overpassId", required = false) String overpassId,
+			Authentication authentication) throws Exception{
+		return overpassService.searchOverpassesByUserId(provinceId, amphurId, districtId, authentication.getName(), overpassId);
+	}
+	
+	@GetMapping("/getLightBulb")
+	public List<LightBulb> getLightBulbAll(){
+		return overpassService.getLightBulbAll();
 	}
 }

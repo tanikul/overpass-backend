@@ -19,6 +19,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import com.overpass.common.Constants.Status;
+import com.overpass.model.LightBulb;
 import com.overpass.model.Overpass;
 import com.overpass.model.OverpassStatus;
 import com.overpass.model.ResponseDataTable;
@@ -35,26 +36,27 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 	public void insertOverpass(Overpass overpass) {
 		try {
 			StringBuilder sql = new StringBuilder();
-			sql.append("insert into overpass (id, setpoint_watt, name, latitude, longtitude, location, district, amphur, province, postcode, create_dt, update_dt, create_by, update_by, status)");
-			sql.append(" values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?, ? )");
+			sql.append("insert into overpass (id, name, latitude, longtitude, location, district, amphur, province, postcode, create_dt, update_dt, create_by, update_by, status, light_bulb_id, light_bulb_cnt)");
+			sql.append(" values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?, ?, ?, ? )");
 			jdbcTemplate.execute(sql.toString(),new PreparedStatementCallback<Boolean>(){  
 			 
 	
 				@Override
 				public Boolean doInPreparedStatement(PreparedStatement ps) throws SQLException, DataAccessException {
 					ps.setString(1, overpass.getId());
-					ps.setDouble(2, overpass.getSetpointWatt());
-					ps.setString(3, overpass.getName());
-					ps.setString(4, overpass.getLatitude());
-					ps.setString(5, overpass.getLongtitude());
-					ps.setString(6, overpass.getLocation());
-					ps.setInt(7, overpass.getDistrict());
-					ps.setInt(8, overpass.getAmphur());
-					ps.setInt(9, overpass.getProvince());
-					ps.setString(10, overpass.getPostcode());
-					ps.setInt(11, overpass.getCreateBy());
-					ps.setInt(12, overpass.getUpdateBy());
-					ps.setString(13, overpass.getStatus().name());
+					ps.setString(2, overpass.getName());
+					ps.setString(3, overpass.getLatitude());
+					ps.setString(4, overpass.getLongtitude());
+					ps.setString(5, overpass.getLocation());
+					ps.setInt(6, overpass.getDistrict());
+					ps.setInt(7, overpass.getAmphur());
+					ps.setInt(8, overpass.getProvince());
+					ps.setString(9, overpass.getPostcode());
+					ps.setInt(10, overpass.getCreateBy());
+					ps.setInt(11, overpass.getUpdateBy());
+					ps.setString(12, overpass.getStatus().name());
+					ps.setInt(13, overpass.getLightBulbId());
+					ps.setInt(14, overpass.getLightBulbCnt());
 					return ps.execute();
 				}  
 			});  
@@ -71,7 +73,7 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 		ResponseDataTable<Overpass> response = new ResponseDataTable<>();
 		
 		try {
-			sql.append("select o.id, o.name, o.location, o.province, o.amphur, o.district, d.district_name, a.amphur_name, p.province_name, o.setpoint_watt, a.postcode, latitude, longtitude, o.status from overpass o inner join province p on o.province = p.province_id left join amphur a on a.amphur_id = o.amphur left join district d on d.district_id = o.district ");
+			sql.append("select o.id, o.name, o.location, o.province, o.amphur, o.district, d.district_name, a.amphur_name, p.province_name, o.light_bulb_id, o.light_bulb_cnt, o.setpoint_watt, a.postcode, latitude, longtitude, o.status from overpass o inner join province p on o.province = p.province_id left join amphur a on a.amphur_id = o.amphur left join district d on d.district_id = o.district ");
 			
 			if(data.getFilter() != null) {
 				if(StringUtils.isNotBlank(data.getFilter().getId())) {
@@ -153,6 +155,8 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 						o.setAmphur(rs.getInt("amphur"));
 						o.setDistrict(rs.getInt("district"));
 						o.setStatus(Status.valueOf(rs.getString("status")));
+						o.setLightBulbId(rs.getInt("light_bulb_id"));
+						o.setLightBulbCnt(rs.getInt("light_bulb_cnt"));
 						return o;
 					}
 				}
@@ -236,25 +240,26 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 	public void updateOverpass(Overpass overpass) {
 		try {
 			StringBuilder sql = new StringBuilder();
-			sql.append("update overpass set setpoint_watt = ?, name = ?, latitude = ?, longtitude = ?, location = ?, district = ?, amphur = ?, province = ?, postcode = ?, update_dt = NOW(), update_by = ?, status = ? where id = ?");
+			sql.append("update overpass set name = ?, latitude = ?, longtitude = ?, location = ?, district = ?, amphur = ?, province = ?, postcode = ?, update_dt = NOW(), update_by = ?, status = ?, light_bulb_id = ?, light_bulb_cnt = ? where id = ?");
 			jdbcTemplate.execute(sql.toString(),new PreparedStatementCallback<Boolean>(){  
 			 
 	
 				@Override
 				public Boolean doInPreparedStatement(PreparedStatement ps) throws SQLException, DataAccessException {
 	
-					ps.setDouble(1, overpass.getSetpointWatt());
-					ps.setString(2, overpass.getName());
-					ps.setString(3, overpass.getLatitude());
-					ps.setString(4, overpass.getLongtitude());
-					ps.setString(5, overpass.getLocation());
-					ps.setInt(6, overpass.getDistrict());
-					ps.setInt(7, overpass.getAmphur());
-					ps.setInt(8, overpass.getProvince());
-					ps.setString(9, overpass.getPostcode());
-					ps.setInt(10, overpass.getUpdateBy());
-					ps.setString(11, overpass.getStatus().name());
-					ps.setString(12, overpass.getId());
+					ps.setString(1, overpass.getName());
+					ps.setString(2, overpass.getLatitude());
+					ps.setString(3, overpass.getLongtitude());
+					ps.setString(4, overpass.getLocation());
+					ps.setInt(5, overpass.getDistrict());
+					ps.setInt(6, overpass.getAmphur());
+					ps.setInt(7, overpass.getProvince());
+					ps.setString(8, overpass.getPostcode());
+					ps.setInt(9, overpass.getUpdateBy());
+					ps.setString(10, overpass.getStatus().name());
+					ps.setInt(11, overpass.getLightBulbId());
+					ps.setInt(12, overpass.getLightBulbCnt());
+					ps.setString(13, overpass.getId());
 					return ps.execute();
 				}  
 			});
@@ -350,8 +355,8 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 	public void insertOverpassStatus(OverpassStatus overpass) {
 		try {
 			StringBuilder sql = new StringBuilder();
-			sql.append("insert into overpass_status (overpass_id, watt, status, effective_date)");
-			sql.append(" values(?, ?, ?, ?)");
+			sql.append("insert into overpass_status (overpass_id, watt, status, effective_date, active)");
+			sql.append(" values(?, ?, ?, ?, ?)");
 			jdbcTemplate.execute(sql.toString(),new PreparedStatementCallback<Boolean>(){  
 			 
 	
@@ -361,6 +366,7 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 					ps.setDouble(2, overpass.getWatt());
 					ps.setString(3, overpass.getStatus().name());
 					ps.setTimestamp(4, overpass.getEffectiveDate());
+					ps.setString(5, overpass.getActive());
 					return ps.execute();
 				}  
 			});  
@@ -375,7 +381,7 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 			List<Object> objs = new ArrayList<Object>();
 			objs.add(status.name());
 			StringBuilder sql = new StringBuilder();
-			sql.append("select o.id, o.name, o.location, o.province, o.amphur, o.district, d.district_name, a.amphur_name, p.province_name, o.setpoint_watt, a.postcode, latitude, longtitude, o.status from overpass o inner join province p on o.province = p.province_id left join amphur a on a.amphur_id = o.amphur left join district d on d.district_id = o.district where o.status = ? ");
+			sql.append("select o.id, o.name, o.location, o.province, o.amphur, o.district, d.district_name, a.amphur_name, p.province_name, o.setpoint_watt, a.postcode, latitude, longtitude, o.status, o.bulb_light_id, o.bulb_light_cnt, l.watt from overpass o inner join light_bulb l on o.light_bulb_id = l.id inner join province p on o.province = p.province_id left join amphur a on a.amphur_id = o.amphur left join district d on d.district_id = o.district where o.status = ? ");
 			
 			return jdbcTemplate.query(sql.toString(), new RowMapper<Overpass>(){
 	
@@ -396,6 +402,12 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 					o.setAmphur(rs.getInt("amphur"));
 					o.setDistrict(rs.getInt("district"));
 					o.setStatus(Status.valueOf(rs.getString("status")));
+					o.setLightBulbCnt(rs.getInt("bulb_light_cnt"));
+					o.setLightBulbId(rs.getInt("bulb_light_id"));
+					LightBulb light = new LightBulb();
+					light.setWatt(rs.getDouble("watt"));
+					light.setId(rs.getInt("bulb_light_id"));
+					o.setLightBulb(light);
 					return o;
 				}
 			}, objs.toArray());
@@ -405,13 +417,22 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 	}
 	
 	@Override
-	public Map<String, Object> getLastStatusOverpassStatus() {
+	public Map<String, String> getLastStatusOverpassStatus() {
 		StringBuilder sql = new StringBuilder();
 		try {
 			sql.append("select overpass_id, status from overpass_status where active = 'Y'");
-			return jdbcTemplate.queryForMap(sql.toString());
+			
+			return jdbcTemplate.query(sql.toString(), (ResultSet rs) -> {
+				Map<String, String> result = new HashMap<>();
+				while (rs.next()) {
+                   result.put(rs.getString("overpass_id"), rs.getString("status"));
+                }
+                return result;
+			},new Object[] { });
 		}catch(EmptyResultDataAccessException ex) {
 			return null;
+		}catch(Exception ex) {
+			throw ex;
 		}
 	}
 
@@ -432,6 +453,95 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 		}catch(Exception ex) {
 			throw ex;
 		}
+	}
+
+	@Override
+	public List<Overpass> searchOverpassesByUserId(Integer provinceId, Integer amphurId, Integer tumbonId, int userId, String overpassId) {
+		try {
+			List<String> wheres = new ArrayList<>();
+			
+			List<Object> objs = new ArrayList<Object>();
+			StringBuilder sql = new StringBuilder();
+			
+			sql.append("select o.id, o.name, os.status overpass_status, o.location, o.province, o.amphur, o.district, d.district_name, a.amphur_name, p.province_name, o.setpoint_watt, a.postcode, latitude, longtitude, o.status ");
+			sql.append(" from users u inner join map_group_overpass m on u.group_id = m.group_id inner join overpass o on o.id = m.overpass_id and o.status = 'ACTIVE' ");
+			sql.append(" left join overpass_status os on o.id = os.overpass_id and active = 'Y'");
+			sql.append(" inner join province p on o.province = p.province_id left join amphur a on a.amphur_id = o.amphur left join district d on d.district_id = o.district ");
+			if(provinceId != null && provinceId > 0) {
+				wheres.add("o.province = ?");
+				objs.add(provinceId);
+			}
+			if(amphurId != null && amphurId > 0) {
+				wheres.add("o.amphur = ?");
+				objs.add(amphurId);
+			}
+			if(tumbonId != null && tumbonId > 0) {
+				wheres.add("o.district = ?");
+				objs.add(tumbonId);
+			}
+			if(!StringUtils.isAllBlank(overpassId)) {
+				wheres.add("o.id = ?");
+				objs.add(overpassId);
+			}
+			wheres.add("u.id = ?");
+			objs.add(userId);
+			if(!wheres.isEmpty()) {
+				sql.append(" where ");
+				for(String where : wheres){
+					sql.append(where).append(" and ");
+				}
+				sql = new StringBuilder(sql.substring(0, sql.length() - 4));
+			}
+			
+			return jdbcTemplate.query(sql.toString(), new RowMapper<Overpass>(){
+	
+				@Override
+				public Overpass mapRow(ResultSet rs, int rowNum) throws SQLException {
+					Overpass o = new Overpass();
+					o.setId(rs.getString("id"));
+					o.setName(rs.getString("name"));
+					o.setLocation(rs.getString("location"));
+					o.setDistrictName(rs.getString("district_name"));
+					o.setAmphurName(rs.getString("amphur_name"));
+					o.setProvinceName(rs.getString("province_name"));
+					o.setLatitude(rs.getString("latitude"));
+					o.setLongtitude(rs.getString("longtitude"));
+					o.setSetpointWatt(rs.getDouble("setpoint_watt"));
+					o.setPostcode(rs.getString("postcode"));
+					o.setProvince(rs.getInt("province"));
+					o.setAmphur(rs.getInt("amphur"));
+					o.setDistrict(rs.getInt("district"));
+					o.setStatus(Status.valueOf(rs.getString("status")));
+					o.setOverpassStatus(rs.getString("overpass_status"));
+					return o;
+				}
+			}, objs.toArray());
+		} catch (EmptyResultDataAccessException e) {
+	        return null;
+	    }	
+	}
+
+	@Override
+	public List<LightBulb> getLightBulbAll() {
+		try {
+			List<LightBulb> objs = new ArrayList<>();
+			StringBuilder sql = new StringBuilder();
+			sql.append("select * from light_bulb");
+			
+			return jdbcTemplate.query(sql.toString(), new RowMapper<LightBulb>(){
+	
+				@Override
+				public LightBulb mapRow(ResultSet rs, int rowNum) throws SQLException {
+					LightBulb o = new LightBulb();
+					o.setId(rs.getInt("id"));
+					o.setLightName(rs.getString("light_name"));
+					o.setWatt(rs.getDouble("watt"));
+					return o;
+				}
+			}, objs.toArray());
+		} catch (EmptyResultDataAccessException e) {
+	        return null;
+	    }	
 	}
 
 }

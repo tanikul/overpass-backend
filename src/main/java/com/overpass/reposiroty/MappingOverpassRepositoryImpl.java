@@ -195,7 +195,7 @@ public class MappingOverpassRepositoryImpl implements MappingOverpassRepository 
 	public List<SearchGroupOverpass> getOverPassByGroupId(int groupId) {
 		try {
 			StringBuilder sql = new StringBuilder();
-			sql.append("select o.id overpass_id, g.id group_id, g.group_name, o.setpoint_watt, o.min_watt, o.name, o.latitude, o.longtitude, o.location, o.district, o.amphur, o.province, o.postcode, d.district_name, a.amphur_name, p.province_name from map_group_overpass m ");
+			sql.append("select o.id overpass_id, g.id group_id, g.group_name, o.setpoint_watt, o.name, o.latitude, o.longtitude, o.location, o.district, o.amphur, o.province, o.postcode, d.district_name, a.amphur_name, p.province_name from map_group_overpass m ");
 			sql.append(" inner join group_overpass g on g.id = m.group_id ");
 			sql.append(" inner join overpass o on m.overpass_id = o.id ");
 			sql.append(" left join district d on d.district_id = o.district");

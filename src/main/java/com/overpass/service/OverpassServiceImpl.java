@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.overpass.common.Constants.Status;
 import com.overpass.common.Utils;
+import com.overpass.model.LightBulb;
 import com.overpass.model.Overpass;
 import com.overpass.model.ResponseDataTable;
 import com.overpass.model.SearchDataTable;
@@ -51,6 +52,17 @@ public class OverpassServiceImpl implements OverpassService {
 	@Override
 	public List<Overpass> getOverpasses(Integer provinceId, Integer amphurId, Integer tumbon) {
 		return overpassRepository.getOverpasses(provinceId, amphurId, tumbon);
+	}
+
+	@Override
+	public List<Overpass> searchOverpassesByUserId(Integer provinceId, Integer amphurId, Integer tumbonId, String userId, String overpassId) {
+		User u = userRepository.getUserByUsername(userId);
+		return overpassRepository.searchOverpassesByUserId(provinceId, amphurId, tumbonId, u.getId(), overpassId);
+	}
+
+	@Override
+	public List<LightBulb> getLightBulbAll() {
+		return overpassRepository.getLightBulbAll();
 	}
 
 }

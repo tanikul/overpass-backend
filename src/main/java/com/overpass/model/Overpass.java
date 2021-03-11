@@ -33,4 +33,12 @@ public class Overpass extends Entity {
 	private String amphurName;
 	private String districtName;
 	private Status status;
+	private String lineNotiToken;
+	private int lightBulbCnt;
+	private int lightBulbId;
+	private LightBulb lightBulb;
+	
+	@JsonInclude(Include.NON_NULL)
+	private String overpassStatus;
+	
 }

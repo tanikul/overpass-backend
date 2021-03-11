@@ -1,14 +1,20 @@
 package com.overpass.service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -36,8 +42,11 @@ public class DashboardServiceImpl implements DashboardService {
 	@Autowired
 	private OverpassRepository overpassRepository;
 	
-	@Value("${url.overpass}")
+	@Value("${overpassUrl}")
 	private String urlOvepass;
+	
+	@Value("${lineNotifyUrl}")
+	private String lineNotifyUrl;
 	
 	@Autowired
 	private RestTemplate restTemplate;
@@ -59,7 +68,7 @@ public class DashboardServiceImpl implements DashboardService {
 		try {
 			boolean chk = false;
 			List<Overpass> overpasses = overpassRepository.getOverpassesByStatus(Status.ACTIVE);
-			Map<String, Object> overpassLastStatus = overpassRepository.getLastStatusOverpassStatus();
+			Map<String, String> overpassLastStatus = overpassRepository.getLastStatusOverpassStatus();
 			for(Overpass o : overpasses) {
 				String url = urlOvepass.replace(":id", o.getId());
 				ResponseEntity<String> rest;
@@ -77,25 +86,26 @@ public class DashboardServiceImpl implements DashboardService {
 					} catch (JsonProcessingException e) {
 						e.printStackTrace();
 					}
-					if(light != null && light.getStatus() == 200) {
+					if(light != null && light.getStatus() == 200 && !light.getResponse().isEmpty()) {
 						
 						SmartLightResponse res = light.getResponse().get(0);
 						OverpassStatus overpass = new OverpassStatus();
 						overpass.setOverpassId(res.getIdOverpass());
 						overpass.setEffectiveDate(res.getTimestamp());
 						overpass.setWatt(res.getWatt());
-						if(StatusLight.ON.name().equals(res.getStatus().toUpperCase()) && res.getWatt() < o.getSetpointWatt()) {
+						if(StatusLight.ON.name().equals(res.getStatus().toUpperCase()) && res.getWatt() < (o.getLightBulbCnt() * o.getLightBulb().getWatt())) {
 							overpass.setStatus(StatusLight.WARNING);
 						}else if(StatusLight.ON.name().equals(res.getStatus().toUpperCase())) {
 							overpass.setStatus(StatusLight.ON);
 						}else if(StatusLight.OFF.name().equals(res.getStatus().toUpperCase())) {
 							overpass.setStatus(StatusLight.OFF);
 						}
-						if(overpassLastStatus == null || !overpassLastStatus.get(res.getIdOverpass()).equals(overpass.getStatus())) {
+						if(overpassLastStatus.isEmpty() || (overpassLastStatus.containsKey(res.getIdOverpass()) && !overpassLastStatus.get(res.getIdOverpass()).equals(overpass.getStatus().name()))) {
 							overpass.setActive("Y");
 							overpassRepository.updateActiveOverpassStatus(overpass.getOverpassId());
 							overpassRepository.insertOverpassStatus(overpass);
 							chk = true;
+							senNotificationToLine(o, overpass);
 						}
 					}
 				}
@@ -105,6 +115,20 @@ public class DashboardServiceImpl implements DashboardService {
 			log.error(ex.getMessage());
 		}
 		return false;
+	}
+
+	private void senNotificationToLine(Overpass overpass, OverpassStatus status) {
+		if(StatusLight.OFF.equals(status.getStatus()) || StatusLight.WARNING.equals(status.getStatus())) {
+			HttpHeaders headers = new HttpHeaders();
+			headers.setAccept(Collections.singletonList(MediaType.APPLICATION_FORM_URLENCODED));
+			headers.set("Authorization", "Bearer " + overpass.getLineNotiToken());
+			MultiValueMap<String, String> map= new LinkedMultiValueMap<String, String>();
+			map.add("message", status.getStatus().name());
+			HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<MultiValueMap<String, String>>(map, headers);
+			restTemplate.exchange(lineNotifyUrl, HttpMethod.POST, request, String.class);
+		}
+		
+		
 	}
 
 }
