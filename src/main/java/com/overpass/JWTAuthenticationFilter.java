@@ -37,7 +37,7 @@ public class JWTAuthenticationFilter extends GenericFilterBean {
        response.setHeader("Access-Control-Allow-Headers", "*");
        response.setHeader("Access-Control-Allow-Credentials", "true");
        response.setHeader("Access-Control-Max-Age", "180");
-       String xx = request.getRequestURI();
+    
         if(!request.getRequestURI().startsWith("/websocket")) {
         	Authentication authentication = TokenAuthenticationService
                     .getAuthentication((HttpServletRequest) servletRequest);

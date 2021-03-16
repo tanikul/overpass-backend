@@ -28,7 +28,9 @@ public class SchedulerTask {
 
     @Scheduled(fixedRate = 30000)
     public void sendMessageToClient() {
-    	dashboardService.validateOverpass();
-    	this.template.convertAndSend("/topic/greetings", dashboardService.getDataDashBoard());
+    	if(dashboardService.validateOverpass()) {
+    		this.template.convertAndSend("/topic/greetings", dashboardService.getDataDashBoard());
+    	}
     }
+    
 }

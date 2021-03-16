@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -25,6 +26,9 @@ import com.overpass.common.Constants.StatusLight;
 import com.overpass.model.Dashboard;
 import com.overpass.model.Overpass;
 import com.overpass.model.OverpassStatus;
+import com.overpass.model.PostNotification;
+import com.overpass.model.PostNotificationData;
+import com.overpass.model.PushNotificationRequest;
 import com.overpass.model.SmartLight;
 import com.overpass.model.SmartLightResponse;
 import com.overpass.reposiroty.DashboardRepository;
@@ -48,8 +52,17 @@ public class DashboardServiceImpl implements DashboardService {
 	@Value("${lineNotifyUrl}")
 	private String lineNotifyUrl;
 	
+	@Value("${firebase.server-key}")
+	private String serverKey;
+	
+	@Value("${firebase.enpoint}")
+	private String endpoint;
+	
 	@Autowired
 	private RestTemplate restTemplate;
+	
+	@Autowired
+	private FCMService fcmService;
 	
 	@Override
 	public Dashboard getDataDashBoard() {
@@ -106,6 +119,8 @@ public class DashboardServiceImpl implements DashboardService {
 							overpassRepository.insertOverpassStatus(overpass);
 							chk = true;
 							senNotificationToLine(o, overpass);
+							o.setOverpassStatus(overpass.getStatus().name());
+							o.setSetpointWatt(res.getWatt());
 						}
 					}
 				}
@@ -119,13 +134,35 @@ public class DashboardServiceImpl implements DashboardService {
 
 	private void senNotificationToLine(Overpass overpass, OverpassStatus status) {
 		if(StatusLight.OFF.equals(status.getStatus()) || StatusLight.WARNING.equals(status.getStatus())) {
-			HttpHeaders headers = new HttpHeaders();
+			/*HttpHeaders headers = new HttpHeaders();
 			headers.setAccept(Collections.singletonList(MediaType.APPLICATION_FORM_URLENCODED));
 			headers.set("Authorization", "Bearer " + overpass.getLineNotiToken());
 			MultiValueMap<String, String> map= new LinkedMultiValueMap<String, String>();
 			map.add("message", status.getStatus().name());
 			HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<MultiValueMap<String, String>>(map, headers);
 			restTemplate.exchange(lineNotifyUrl, HttpMethod.POST, request, String.class);
+			*/
+			PushNotificationRequest req = new PushNotificationRequest();
+			try {
+				HttpHeaders headers = new HttpHeaders();
+				headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+				headers.add("Authorization", serverKey);
+				JSONObject json = new JSONObject();
+				json.put("to", "/topics/overpass-18");
+				json.put("to", "/topics/overpass-18");
+				
+				PostNotification post = new PostNotification();
+				post.setTo("/topics/overpass-18");
+				PostNotificationData data = new PostNotificationData();
+				data.setBody("ำฟดับ");
+				data.setStatus(status.getStatus());
+				data.setTitle("xxx");
+				post.setData(data);
+				HttpEntity<PostNotification> entity = new HttpEntity<>(post, headers);
+				restTemplate.postForObject(endpoint, entity, String.class);
+			} catch(Exception ex) {
+				throw ex;
+			}
 		}
 		
 		

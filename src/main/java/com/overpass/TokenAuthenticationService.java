@@ -18,6 +18,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.overpass.common.CustomUserDetails;
+import com.overpass.model.User;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -38,9 +40,11 @@ public class TokenAuthenticationService {
     	auth.getAuthorities().forEach(roles -> {
     		payload.put("role", roles.getAuthority());
     	});
-    	
+    	CustomUserDetails customUserDetails = (CustomUserDetails)auth.getPrincipal();
+    	User user = customUserDetails.getUser();
     	String JWT = Jwts.builder().setSubject(auth.getName())
     			.claim("role", payload.get("role"))
+    			.claim("overpassGroup", user.getGroupId())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATIONTIME))
                 .signWith(SignatureAlgorithm.HS512, SECRET).compact();
     	JSONObject result = new JSONObject();

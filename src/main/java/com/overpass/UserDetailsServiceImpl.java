@@ -11,6 +11,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.overpass.common.CustomAuthentication;
+import com.overpass.common.CustomUserDetails;
 import com.overpass.model.User;
 import com.overpass.reposiroty.UserRepository;
 
@@ -28,9 +30,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         }
         Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
         grantedAuthorities.add(new SimpleGrantedAuthority(user.getRole()));
-
-        return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(),
-            grantedAuthorities);
+  
+        return new CustomUserDetails(user.getUsername(), user.getPassword(), grantedAuthorities, user);
+        //return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(),
+         //   grantedAuthorities);
     }
 
 }
