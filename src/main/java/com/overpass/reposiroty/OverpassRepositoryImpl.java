@@ -38,7 +38,7 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 		try {
 			StringBuilder sql = new StringBuilder();
 			sql.append("insert into overpass (id, name, latitude, longtitude, location, district, amphur, province, postcode, create_dt, update_dt, create_by, update_by, status, light_bulb_id, light_bulb_cnt)");
-			sql.append(" values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?, ?, ?, ? )");
+			sql.append(" values(?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?, ?, ?, ? )");
 			jdbcTemplate.execute(sql.toString(),new PreparedStatementCallback<Boolean>(){  
 			 
 	
