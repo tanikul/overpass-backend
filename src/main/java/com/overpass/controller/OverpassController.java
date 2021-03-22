@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.overpass.model.LightBulb;
 import com.overpass.model.Overpass;
+import com.overpass.model.OverpassStatus;
 import com.overpass.model.ResponseDataTable;
 import com.overpass.model.SearchDataTable;
 import com.overpass.service.OverpassService;
@@ -83,5 +84,10 @@ public class OverpassController {
 	@GetMapping("/getLightBulb")
 	public List<LightBulb> getLightBulbAll(){
 		return overpassService.getLightBulbAll();
+	}
+	
+	@GetMapping("/getOverpassStatusByGroupId")
+	public List<OverpassStatus> getOverpassStatusByGroupId(@RequestParam(value = "groupId") String groupId){
+		return overpassService.getOverpassStatusByGroupId(groupId);
 	}
 }

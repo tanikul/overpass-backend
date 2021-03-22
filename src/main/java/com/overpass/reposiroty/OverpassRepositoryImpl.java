@@ -19,6 +19,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import com.overpass.common.Constants.Status;
+import com.overpass.common.Constants.StatusLight;
 import com.overpass.model.LightBulb;
 import com.overpass.model.Overpass;
 import com.overpass.model.OverpassStatus;
@@ -355,8 +356,8 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 	public void insertOverpassStatus(OverpassStatus overpass) {
 		try {
 			StringBuilder sql = new StringBuilder();
-			sql.append("insert into overpass_status (overpass_id, watt, status, effective_date, active)");
-			sql.append(" values(?, ?, ?, ?, ?)");
+			sql.append("insert into overpass_status (overpass_id, watt, status, effective_date, active, id, location, district, amphur, province, latitude, longtitude, map_url, topic, location_display)");
+			sql.append(" values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 			jdbcTemplate.execute(sql.toString(),new PreparedStatementCallback<Boolean>(){  
 			 
 	
@@ -367,6 +368,16 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 					ps.setString(3, overpass.getStatus().name());
 					ps.setTimestamp(4, overpass.getEffectiveDate());
 					ps.setString(5, overpass.getActive());
+					ps.setString(6, overpass.getId());
+					ps.setString(7, overpass.getLocation());
+					ps.setString(8, overpass.getDistrict());
+					ps.setString(9, overpass.getAmphur());
+					ps.setString(10, overpass.getProvince());
+					ps.setString(11, overpass.getLatitude());
+					ps.setString(12, overpass.getLongtitude());
+					ps.setString(13, overpass.getMapUrl());
+					ps.setString(14, overpass.getTopic());
+					ps.setString(15, overpass.getLocationDisplay());
 					return ps.execute();
 				}  
 			});  
@@ -463,7 +474,7 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 			List<Object> objs = new ArrayList<Object>();
 			StringBuilder sql = new StringBuilder();
 			
-			sql.append("select o.id, o.name, os.status overpass_status, o.location, o.province, o.amphur, o.district, d.district_name, a.amphur_name, p.province_name, o.setpoint_watt, a.postcode, latitude, longtitude, o.status ");
+			sql.append("select o.id, o.name, os.status overpass_status, o.location, o.province, o.amphur, o.district, d.district_name, a.amphur_name, p.province_name, o.setpoint_watt, a.postcode, o.latitude, o.longtitude, o.status ");
 			sql.append(" from users u inner join map_group_overpass m on u.group_id = m.group_id inner join overpass o on o.id = m.overpass_id and o.status = 'ACTIVE' ");
 			sql.append(" left join overpass_status os on o.id = os.overpass_id and active = 'Y'");
 			sql.append(" inner join province p on o.province = p.province_id left join amphur a on a.amphur_id = o.amphur left join district d on d.district_id = o.district ");
@@ -539,6 +550,40 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 					return o;
 				}
 			}, objs.toArray());
+		} catch (EmptyResultDataAccessException e) {
+	        return null;
+	    }	
+	}
+
+	@Override
+	public List<OverpassStatus> getOverpassStatusByGroupId(String groupId) {
+		try {
+			StringBuilder sql = new StringBuilder();
+			sql.append("select o.* from overpass_status o inner join map_group_overpass m on o.overpass_id = m.overpass_id and m.group_id = ? order by o.effective_date desc");
+			
+			return jdbcTemplate.query(sql.toString(), new RowMapper<OverpassStatus>(){
+	
+				@Override
+				public OverpassStatus mapRow(ResultSet rs, int rowNum) throws SQLException {
+					OverpassStatus o = new OverpassStatus();
+					o.setActive(rs.getString("active"));
+					o.setAmphur(rs.getString("amphur"));
+					o.setDistrict(rs.getString("district"));
+					o.setEffectiveDate(rs.getTimestamp("effective_date"));
+					o.setId(rs.getString("id"));
+					o.setLatitude(rs.getString("latitude"));
+					o.setLongtitude(rs.getString("longtitude"));
+					o.setLocation(rs.getString("location"));
+					o.setMapUrl(rs.getString("map_url"));
+					o.setOverpassId(rs.getString("overpass_id"));
+					o.setProvince(rs.getString("province"));
+					o.setStatus(StatusLight.valueOf(rs.getString("status")));
+					o.setWatt(rs.getDouble("watt"));
+					o.setTopic(rs.getString("topic"));
+					o.setLocationDisplay(rs.getString("location_display"));
+					return o;
+				}
+			}, new Object[] { groupId });
 		} catch (EmptyResultDataAccessException e) {
 	        return null;
 	    }	

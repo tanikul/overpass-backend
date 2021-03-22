@@ -10,6 +10,7 @@ import com.overpass.common.Constants.Status;
 import com.overpass.common.Utils;
 import com.overpass.model.LightBulb;
 import com.overpass.model.Overpass;
+import com.overpass.model.OverpassStatus;
 import com.overpass.model.ResponseDataTable;
 import com.overpass.model.SearchDataTable;
 import com.overpass.model.User;
@@ -63,6 +64,11 @@ public class OverpassServiceImpl implements OverpassService {
 	@Override
 	public List<LightBulb> getLightBulbAll() {
 		return overpassRepository.getLightBulbAll();
+	}
+
+	@Override
+	public List<OverpassStatus> getOverpassStatusByGroupId(String id) {
+		return overpassRepository.getOverpassStatusByGroupId(id);
 	}
 
 }

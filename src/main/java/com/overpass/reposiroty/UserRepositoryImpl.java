@@ -458,4 +458,25 @@ public class UserRepositoryImpl implements UserRepository {
 	    	throw ex;
 	    }	
 	}
+
+	@Override
+	public void changePassword(int id, String newPassword) {
+		try {
+			StringBuilder sql = new StringBuilder();
+			sql.append("update users set password = ?, update_dt = NOW(), update_by = ? where id = ?");
+			jdbcTemplate.execute(sql.toString(),new PreparedStatementCallback<Boolean>(){  
+			 
+	
+				@Override
+				public Boolean doInPreparedStatement(PreparedStatement ps) throws SQLException, DataAccessException {
+					ps.setString(1, newPassword);
+					ps.setInt(2, id);
+					ps.setInt(3, id);
+					return ps.execute();
+				}  
+			});  
+		}catch(Exception ex) {
+	    	throw ex;
+	    }	
+	}
 }

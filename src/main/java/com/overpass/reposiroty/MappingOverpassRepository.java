@@ -22,4 +22,5 @@ public interface MappingOverpassRepository {
 	public void deleteMapUserAndGroup(int id);
 	public int count(SearchDataTable<GroupOverpass> data);
 	public List<GroupOverpass> getMappingGroupOverPassAll();
+	public List<GroupOverpass> getGroupByOverpassId(String overpassId);
 }

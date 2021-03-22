@@ -1,6 +1,9 @@
 package com.overpass.service;
 
+import java.sql.Timestamp;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,7 +27,10 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.overpass.common.Constants.Status;
 import com.overpass.common.Constants.StatusLight;
+import com.overpass.common.Utils;
 import com.overpass.model.Dashboard;
+import com.overpass.model.GroupOverpass;
+import com.overpass.model.MessageToNotify;
 import com.overpass.model.Overpass;
 import com.overpass.model.OverpassStatus;
 import com.overpass.model.PostNotification;
@@ -32,8 +39,10 @@ import com.overpass.model.PushNotificationRequest;
 import com.overpass.model.SmartLight;
 import com.overpass.model.SmartLightResponse;
 import com.overpass.reposiroty.DashboardRepository;
+import com.overpass.reposiroty.MappingOverpassRepository;
 import com.overpass.reposiroty.OverpassRepository;
 
+import io.grpc.netty.shaded.io.netty.util.internal.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -63,6 +72,9 @@ public class DashboardServiceImpl implements DashboardService {
 	
 	@Autowired
 	private FCMService fcmService;
+	
+	@Autowired
+	private MappingOverpassRepository mappingOverpassRepository;
 	
 	@Override
 	public Dashboard getDataDashBoard() {
@@ -106,8 +118,11 @@ public class DashboardServiceImpl implements DashboardService {
 						overpass.setOverpassId(res.getIdOverpass());
 						overpass.setEffectiveDate(res.getTimestamp());
 						overpass.setWatt(res.getWatt());
+						Double w = 0.0;
 						if(StatusLight.ON.name().equals(res.getStatus().toUpperCase()) && res.getWatt() < (o.getLightBulbCnt() * o.getLightBulb().getWatt())) {
+							w = o.getLightBulbCnt() * o.getLightBulb().getWatt();
 							overpass.setStatus(StatusLight.WARNING);
+							overpass.setEffectiveDate(new Timestamp(System.currentTimeMillis()));
 						}else if(StatusLight.ON.name().equals(res.getStatus().toUpperCase())) {
 							overpass.setStatus(StatusLight.ON);
 						}else if(StatusLight.OFF.name().equals(res.getStatus().toUpperCase())) {
@@ -115,10 +130,25 @@ public class DashboardServiceImpl implements DashboardService {
 						}
 						if(overpassLastStatus.isEmpty() || (overpassLastStatus.containsKey(res.getIdOverpass()) && !overpassLastStatus.get(res.getIdOverpass()).equals(overpass.getStatus().name()))) {
 							overpass.setActive("Y");
-							overpassRepository.updateActiveOverpassStatus(overpass.getOverpassId());
-							overpassRepository.insertOverpassStatus(overpass);
+							overpass.setDistrict(o.getDistrictName());
+							overpass.setAmphur(o.getAmphurName());
+							overpass.setProvince(o.getProvinceName());
+							overpass.setLocation(o.getLocation());
+							overpass.setLatitude(o.getLatitude());
+							overpass.setLongtitude(o.getLongtitude());
+							String mapUrl = "http://www.google.com/maps/place/" + o.getLatitude() + "," + o.getLongtitude();
+							overpass.setMapUrl(mapUrl);
+							overpass.setId("" + res.getId());
+							
+							
 							chk = true;
-							senNotificationToLine(o, overpass);
+							MessageToNotify messageNotify = getMessageToNotify(overpass, o.getProvince(), w);
+							overpassRepository.updateActiveOverpassStatus(overpass.getOverpassId());
+							overpass.setTopic(messageNotify.getTopic());
+							overpass.setLocationDisplay(messageNotify.getLocation());
+							overpassRepository.insertOverpassStatus(overpass);
+							senNotificationToLine(o.getId(), messageNotify);
+							sendNotifyToWeb(o.getId(), messageNotify);
 							o.setOverpassStatus(overpass.getStatus().name());
 							o.setSetpointWatt(res.getWatt());
 						}
@@ -132,40 +162,96 @@ public class DashboardServiceImpl implements DashboardService {
 		return false;
 	}
 
-	private void senNotificationToLine(Overpass overpass, OverpassStatus status) {
-		if(StatusLight.OFF.equals(status.getStatus()) || StatusLight.WARNING.equals(status.getStatus())) {
-			/*HttpHeaders headers = new HttpHeaders();
-			headers.setAccept(Collections.singletonList(MediaType.APPLICATION_FORM_URLENCODED));
-			headers.set("Authorization", "Bearer " + overpass.getLineNotiToken());
-			MultiValueMap<String, String> map= new LinkedMultiValueMap<String, String>();
-			map.add("message", status.getStatus().name());
-			HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<MultiValueMap<String, String>>(map, headers);
-			restTemplate.exchange(lineNotifyUrl, HttpMethod.POST, request, String.class);
-			*/
-			PushNotificationRequest req = new PushNotificationRequest();
-			try {
+	private void senNotificationToLine(String overpassId, MessageToNotify messageNotify){
+		try {
+			List<GroupOverpass> list = mappingOverpassRepository.getGroupByOverpassId(overpassId);
+			for(GroupOverpass item : list) {
+				HttpHeaders headers = new HttpHeaders();
+				headers.setAccept(Collections.singletonList(MediaType.APPLICATION_FORM_URLENCODED));
+				headers.set("Authorization", "Bearer " + item.getLineNotiToken());
+				MultiValueMap<String, String> map= new LinkedMultiValueMap<>();
+				String str = "";
+				str += messageNotify.getTopic() + "\n";
+				if(!StringUtil.isNullOrEmpty(messageNotify.getLocation())) {
+					str += "สถานที่: " + messageNotify.getLocation() + "\n";
+				}
+				if(!StringUtil.isNullOrEmpty(messageNotify.getNote())) {
+					str += "Note: " + messageNotify.getNote() + "\n";
+				}
+				if(!StringUtil.isNullOrEmpty(messageNotify.getTimeToHang())) {
+					str += "วันเวลาที่ได้รับแจ้ง: " + messageNotify.getTimeToHang() + "\n";
+				}
+				if(!StringUtil.isNullOrEmpty(messageNotify.getCoordinate())) {
+					str += "พิกัด: " + messageNotify.getCoordinate();
+				}
+				map.add("message", str);
+				HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<MultiValueMap<String, String>>(map, headers);
+				restTemplate.exchange(lineNotifyUrl, HttpMethod.POST, request, String.class);
+			}
+		}catch(Exception ex) {
+			throw ex;
+		}
+	}
+	
+	private void sendNotifyToWeb(String overpassId, MessageToNotify messageNotify) {
+		try {
+			List<GroupOverpass> list = mappingOverpassRepository.getGroupByOverpassId(overpassId);
+			for(GroupOverpass item : list) {
 				HttpHeaders headers = new HttpHeaders();
 				headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 				headers.add("Authorization", serverKey);
-				JSONObject json = new JSONObject();
-				json.put("to", "/topics/overpass-18");
-				json.put("to", "/topics/overpass-18");
 				
 				PostNotification post = new PostNotification();
-				post.setTo("/topics/overpass-18");
-				PostNotificationData data = new PostNotificationData();
-				data.setBody("ำฟดับ");
-				data.setStatus(status.getStatus());
-				data.setTitle("xxx");
-				post.setData(data);
+				post.setTo("/topics/overpass-" + item.getId());
+				post.setData(messageNotify);
 				HttpEntity<PostNotification> entity = new HttpEntity<>(post, headers);
 				restTemplate.postForObject(endpoint, entity, String.class);
-			} catch(Exception ex) {
-				throw ex;
 			}
+		}catch(Exception ex) {
+			throw ex;
 		}
-		
-		
 	}
-
+	
+	private MessageToNotify getMessageToNotify(OverpassStatus overpass, int provinceId, Double watt) {
+		MessageToNotify noti = new MessageToNotify();
+		try {
+			noti.setStatus(overpass.getStatus());
+			if(StatusLight.OFF.equals(overpass.getStatus())){
+				noti.setTopic("แจ้งเตือนหลอดไฟดับ ");
+			}else if(StatusLight.WARNING.equals(overpass.getStatus())){
+				noti.setTopic("แจ้งเตือนพลังงานไฟลดลง " + overpass.getWatt() + " < " + watt + " watt");
+			}
+			String location = "";
+			if(provinceId == 1) {
+				if(!StringUtil.isNullOrEmpty(overpass.getAmphur())) {
+					location += overpass.getAmphur() + " ";
+				}
+				if(!StringUtil.isNullOrEmpty(overpass.getDistrict())) {
+					location += "แขวง" + overpass.getDistrict() + " ";
+				}
+				if(!StringUtil.isNullOrEmpty(overpass.getProvince())) {
+					location += overpass.getProvince();
+				}
+				
+			}else {
+				if(!StringUtil.isNullOrEmpty(overpass.getDistrict())) {
+					location += "ต." + overpass.getDistrict() + " ";
+				}
+				if(!StringUtil.isNullOrEmpty(overpass.getAmphur())) {
+					location += "อ." + overpass.getAmphur() + " ";
+				}
+				if(!StringUtil.isNullOrEmpty(overpass.getProvince())) {
+					location += "จ." + overpass.getProvince();
+				}
+			}
+			noti.setCoordinate(overpass.getMapUrl());
+			noti.setLocation(location);
+			noti.setNote(overpass.getLocation());
+			noti.setTimeToHang(Utils.dateFormatToString(Utils.convertTimestampToDate(overpass.getEffectiveDate()), "dd/MM/yyyy HH:mm:ss"));
+			
+			return noti;
+		}catch(Exception ex) {
+			throw ex;
+		}
+	}
 }

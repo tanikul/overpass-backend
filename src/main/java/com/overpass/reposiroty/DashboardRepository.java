@@ -11,4 +11,5 @@ public interface DashboardRepository {
 	public Map<String, Object> getOverpassOnOff();
 	public Map<String, Object> getOverpassByMonth(StatusLight status);
 	public Map<String, Object> countOverpassAllByStatus(StatusLight status);
+	
 }

@@ -64,4 +64,9 @@ public class UserController {
 	public List<User> getUserByRole(@RequestParam("role") String role) {
 		return userService.getUserByRole(role);
 	}
+	
+	@PostMapping("/changePassword")
+	public void changePassword(Authentication authentication, String newPassword) {
+		userService.changePassword(authentication, newPassword);
+	}
 }

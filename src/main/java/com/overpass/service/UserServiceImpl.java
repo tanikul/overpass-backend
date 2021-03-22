@@ -73,4 +73,12 @@ public class UserServiceImpl implements UserService {
 		return userRepository.getUserByRole(role);
 	}
 
+	@Override
+	public void changePassword(Authentication authentication, String newPassword) {
+		User u = userRepository.getUserByUsername(authentication.getName());
+		newPassword  = passwordEncoder.encode(newPassword);
+		userRepository.changePassword(u.getId(), newPassword);
+		
+	}
+
 }

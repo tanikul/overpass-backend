@@ -16,4 +16,5 @@ public interface UserService {
 	public void deleteUser(int id);
 	public ResponseDataTable<User> searchUser(SearchDataTable<User> data, Authentication authentication);
 	public List<User> getUserByRole(String role);
+	public void changePassword(Authentication authentication, String newPassword);
 }

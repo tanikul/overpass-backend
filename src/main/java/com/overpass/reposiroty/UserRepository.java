@@ -17,4 +17,5 @@ public interface UserRepository {
 	public int countByUsername(String username);
 	public User getUserByUsername(String username);
 	public List<User> getUserByRole(String role);
+	public void changePassword(int id, String newPassword);
 }

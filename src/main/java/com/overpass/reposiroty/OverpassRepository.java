@@ -24,4 +24,5 @@ public interface OverpassRepository {
 	public Map<String, String> getLastStatusOverpassStatus();
 	public List<Overpass> searchOverpassesByUserId(Integer provinceId, Integer amphurId, Integer tumbon, int userId, String overpassId);
 	public List<LightBulb> getLightBulbAll();
+	public List<OverpassStatus> getOverpassStatusByGroupId(String id);
 }

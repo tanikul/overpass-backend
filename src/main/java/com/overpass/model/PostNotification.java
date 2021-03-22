@@ -8,5 +8,5 @@ import lombok.Setter;
 public class PostNotification {
 
 	private String to;
-	private PostNotificationData data;
+	private MessageToNotify data;
 }

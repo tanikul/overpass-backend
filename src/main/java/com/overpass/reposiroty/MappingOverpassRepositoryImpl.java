@@ -324,4 +324,27 @@ public class MappingOverpassRepositoryImpl implements MappingOverpassRepository 
 		}
 	}
 
+	@Override
+	public List<GroupOverpass> getGroupByOverpassId(String overpassId) {
+		try {
+			StringBuilder sql = new StringBuilder();
+			sql.append("select g.id, g.group_name, g.line_noti_token from map_group_overpass m inner join group_overpass g on m.group_id = g.id where m.overpass_id = ?");
+			return jdbcTemplate.query(sql.toString(), new RowMapper<GroupOverpass>(){
+	
+				@Override
+				public GroupOverpass mapRow(ResultSet rs, int rowNum) throws SQLException {
+					GroupOverpass o = new GroupOverpass();
+					o.setId(rs.getInt("id"));
+					o.setGroupName(rs.getString("group_name"));
+					o.setLineNotiToken(rs.getString("line_noti_token"));
+					return o;
+				}
+			}, new Object[]{ overpassId });
+		} catch (EmptyResultDataAccessException e) {
+	        return null;
+	    } catch(Exception ex) {
+	    	throw ex;
+	    }	
+	}
+
 }
