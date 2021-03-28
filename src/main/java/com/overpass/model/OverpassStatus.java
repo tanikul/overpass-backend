@@ -26,4 +26,5 @@ public class OverpassStatus {
 	private String mapUrl;
 	private String topic;
 	private String locationDisplay;
+	private Integer seq;
 }

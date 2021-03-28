@@ -390,9 +390,9 @@ public class UserRepositoryImpl implements UserRepository {
 	public User getUserByUsername(String username) {
 		try {
 			StringBuilder sql = new StringBuilder();
-			sql.append("SELECT u.id, u.username, m.name_th prefix, u.group_id, g.group_name, u.first_name, u.last_name, u.role, u.status, u.email, u.line_id, u.mobile_no FROM users u ");
+			sql.append("SELECT u.id, u.username, m.name_th prefix_name, u.prefix, u.email, u.line_id, u.group_id, g.group_name, u.first_name, u.last_name, u.role, u.status, u.email, u.line_id, u.mobile_no FROM users u ");
 			sql.append("INNER JOIN master_data m ON m.TYPE = 'PREFIX' AND u.prefix = m.ID ");
-			sql.append("inner join group_overpass g on g.id = u.group_id ");
+			sql.append("left join group_overpass g on g.id = u.group_id ");
 			sql.append("WHERE u.username = ?");
 			return jdbcTemplate.queryForObject(sql.toString(), new RowMapper<User>(){
 	
@@ -401,7 +401,7 @@ public class UserRepositoryImpl implements UserRepository {
 					User user = new User();
 					user.setId(rs.getInt("id"));
 					user.setUsername(rs.getNString("username"));
-					user.setPrefix(rs.getString("prefix"));
+					user.setPrefix(rs.getString("prefix_name"));
 					user.setFirstName(rs.getString("first_name"));
 					user.setLastName(rs.getString("last_name"));
 					user.setRole(rs.getString("role"));
@@ -411,7 +411,9 @@ public class UserRepositoryImpl implements UserRepository {
 					user.setMobileNo(rs.getString("mobile_no"));
 					user.setGroupId(rs.getInt("group_id"));
 					user.setGroupName(rs.getString("group_name"));
-					
+					user.setPrefixId(rs.getInt("prefix"));
+					user.setEmail(rs.getString("email"));
+					user.setLineId(rs.getString("line_id"));
 					return user;
 				}
 			}, new Object[]{ username });
@@ -472,6 +474,33 @@ public class UserRepositoryImpl implements UserRepository {
 					ps.setString(1, newPassword);
 					ps.setInt(2, id);
 					ps.setInt(3, id);
+					return ps.execute();
+				}  
+			});  
+		}catch(Exception ex) {
+	    	throw ex;
+	    }	
+	}
+
+	@Override
+	public void updateUserProfile(User user) {
+		try {
+			StringBuilder sql = new StringBuilder();
+			sql.append("update users set prefix = ?, first_name = ?, last_name = ?, email = ?, line_id = ?, mobile_no = ?, update_dt = NOW(), update_by = ? where id = ?");
+			jdbcTemplate.execute(sql.toString(),new PreparedStatementCallback<Boolean>(){  
+			 
+	
+				@Override
+				public Boolean doInPreparedStatement(PreparedStatement ps) throws SQLException, DataAccessException {
+					ps.setString(1, user.getPrefix());
+					ps.setString(2, user.getFirstName());
+					ps.setString(3, user.getLastName());
+					ps.setString(4, user.getEmail());
+					ps.setString(5, user.getLineId());
+					ps.setString(6, user.getMobileNo());
+					ps.setInt(7, user.getUpdateBy());
+					ps.setInt(8, user.getId());
+					
 					return ps.execute();
 				}  
 			});  

@@ -17,6 +17,9 @@ import com.overpass.model.SearchDataTable;
 import com.overpass.model.User;
 import com.overpass.reposiroty.UserRepository;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -25,6 +28,9 @@ public class UserServiceImpl implements UserService {
 	
 	@Autowired
 	private BCryptPasswordEncoder passwordEncoder;
+	
+	@Autowired
+	private EmailService emailService;
 	
 	@Override
 	public User getUserById(int id) {
@@ -42,6 +48,7 @@ public class UserServiceImpl implements UserService {
 		Utils.getRole(authentication);
 		if(userRepository.countByUsername(user.getUsername()) == 0) {
 			userRepository.inserUser(user);
+			senEmail(user);
 		}else {
 			throw new Exception("username duplicate.");
 		}
@@ -79,6 +86,39 @@ public class UserServiceImpl implements UserService {
 		newPassword  = passwordEncoder.encode(newPassword);
 		userRepository.changePassword(u.getId(), newPassword);
 		
+	}
+
+	@Override
+	public User getUser(Authentication authentication) {
+		return userRepository.getUserByUsername(authentication.getName());
+	}
+
+	@Override
+	public void updateUserProfile(User user, Authentication authentication) {
+		User u = userRepository.getUserByUsername(authentication.getName());
+		Utils.getRole(authentication);
+		user.setCreateBy(u.getId());
+		user.setId(u.getId());
+		userRepository.updateUserProfile(user);
+	}
+	
+	private void senEmail(User user) {
+		try {
+			String subject = "แจ้งการลงทะเบียนกับระบบ Smart Light Bangkok";
+			String body = "เรียนคุณ " + user.getFirstName() + " " + user.getLastName();
+			body += "\n\n              ";
+			body += "ระบบได้ทำการลงทะเบียนให้คุณแล้ว โดยใช้";
+			body += "\n                ";
+			body += "username : " + user.getUsername();
+			body += "\n                ";
+			body += "password : " + user.getPassword();
+			body += "\n\n";
+			//body += "ขอบคุณครับ";
+ 			emailService.sendSimpleMessage(user.getEmail(), subject, body);
+		}catch(Exception ex) {
+			log.error(ex.getMessage());
+			throw ex;
+		}
 	}
 
 }

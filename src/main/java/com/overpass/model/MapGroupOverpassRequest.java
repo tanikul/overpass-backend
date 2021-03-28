@@ -11,5 +11,7 @@ public class MapGroupOverpassRequest {
 
 	private String groupName;
 	private int groupId;
+	private String email;
+	private String lineNotiToken;
 	private List<Overpass> overpasses;
 }

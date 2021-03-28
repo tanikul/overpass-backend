@@ -24,6 +24,6 @@ public class SmartLightResponse {
 	private String status;
 	
 	@JsonProperty("Timestamp")
-	private Timestamp timestamp;
+	private String timestamp;
 
 }

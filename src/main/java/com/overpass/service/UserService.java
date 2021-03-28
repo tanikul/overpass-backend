@@ -10,6 +10,7 @@ import com.overpass.model.User;
 
 public interface UserService {
 
+	public User getUser(Authentication authentication);
 	public User getUserById(int id);
 	public void inserUser(User user, Authentication authentication) throws Exception;
 	public void updateUser(User user, Authentication authentication);
@@ -17,4 +18,5 @@ public interface UserService {
 	public ResponseDataTable<User> searchUser(SearchDataTable<User> data, Authentication authentication);
 	public List<User> getUserByRole(String role);
 	public void changePassword(Authentication authentication, String newPassword);
+	public void updateUserProfile(User user, Authentication authentication);
 }

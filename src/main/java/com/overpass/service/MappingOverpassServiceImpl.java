@@ -38,6 +38,8 @@ public class MappingOverpassServiceImpl implements MappingOverpassService {
 		group.setCreateBy(u.getId());
 		group.setUpdateBy(u.getId());
 		group.setGroupName(data.getGroupName());
+		group.setEmail(data.getEmail());
+		group.setLineNotiToken(data.getLineNotiToken());
 		int id = mappingOverpassRepository.insertGroupOverpass(group);
 		
 		if(id > 0 && !data.getOverpasses().isEmpty()) {
@@ -56,9 +58,16 @@ public class MappingOverpassServiceImpl implements MappingOverpassService {
 	public void updateMapGroupAndOverpass(MapGroupOverpassRequest data, Authentication authen) {
 		
 		User u = userRepository.getUserByUsername(authen.getName());
-		boolean deleteRs = mappingOverpassRepository.deleteMapGroupAndOverpassByGroupId(data.getGroupId());
+		GroupOverpass group = new GroupOverpass();
+		group.setId(data.getGroupId());
+		group.setGroupName(data.getGroupName());
+		group.setEmail(data.getEmail());
+		group.setLineNotiToken(data.getLineNotiToken());
+		group.setUpdateBy(u.getId());
+		mappingOverpassRepository.updateGroupOverpass(group);
+		mappingOverpassRepository.deleteMapGroupAndOverpassByGroupId(data.getGroupId());
 		
-		if(deleteRs && !data.getOverpasses().isEmpty()) {
+		if(!data.getOverpasses().isEmpty()) {
 			for(Overpass o : data.getOverpasses()) {
 				MapGroupOverpass map = new MapGroupOverpass();
 				map.setGroupId(data.getGroupId());
@@ -112,6 +121,8 @@ public class MappingOverpassServiceImpl implements MappingOverpassService {
 		List<Overpass> arrOverpass = new ArrayList<>();
 		int groupId = 0;
 		String groupName = "";
+		String lineNotify = "";
+		String email = "";
 		for(SearchGroupOverpass item : rs) {
 			Overpass o = new Overpass();
 			o.setId(item.getOverpassId());
@@ -123,12 +134,16 @@ public class MappingOverpassServiceImpl implements MappingOverpassService {
 			arrOverpass.add(o);
 			groupId = item.getGroupId();
 			groupName = item.getGroupName();
+			lineNotify = item.getLineNotifyToken();
+			email = item.getEmail();
 		}
 		if(groupId > 0) {
 			
 			obj.setGroupId(groupId);
 			obj.setGroupName(groupName);
 			obj.setOverpasses(arrOverpass);
+			obj.setLineNotifyToken(lineNotify);
+			obj.setEmail(email);
 		}
 		return obj;
 	}

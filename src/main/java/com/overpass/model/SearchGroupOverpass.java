@@ -15,5 +15,7 @@ public class SearchGroupOverpass {
 	private String districtName;
 	private String amphurName;
 	private String provinceName;
+	private String lineNotifyToken;
+	private String email;
 	
 }

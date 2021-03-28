@@ -1,10 +1,16 @@
 package com.overpass.service;
 
 import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.json.JSONObject;
@@ -16,6 +22,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -38,9 +45,11 @@ import com.overpass.model.PostNotificationData;
 import com.overpass.model.PushNotificationRequest;
 import com.overpass.model.SmartLight;
 import com.overpass.model.SmartLightResponse;
+import com.overpass.model.User;
 import com.overpass.reposiroty.DashboardRepository;
 import com.overpass.reposiroty.MappingOverpassRepository;
 import com.overpass.reposiroty.OverpassRepository;
+import com.overpass.reposiroty.UserRepository;
 
 import io.grpc.netty.shaded.io.netty.util.internal.StringUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -74,24 +83,37 @@ public class DashboardServiceImpl implements DashboardService {
 	private FCMService fcmService;
 	
 	@Autowired
+	private EmailService emailService;
+	
+	@Autowired
 	private MappingOverpassRepository mappingOverpassRepository;
 	
+	@Autowired
+	private UserRepository userRepository;
+	
 	@Override
-	public Dashboard getDataDashBoard() {
+	public Dashboard getDataDashBoard(Authentication authentication) {
+		User u = userRepository.getUserByUsername(authentication.getName());
 		Dashboard obj = new Dashboard();
-		obj.setOverpassAll(dashboardRepository.countOverpassAll());
-		obj.setOverpassByZone(dashboardRepository.countOverpassByZone());
-		obj.setOverpassOffByMonth(dashboardRepository.getOverpassByMonth(StatusLight.OFF));
-		obj.setOverpassOnByMonth(dashboardRepository.getOverpassByMonth(StatusLight.ON));
-		obj.setOverpassOn(dashboardRepository.countOverpassAllByStatus(StatusLight.ON));
-		obj.setOverpassOff(dashboardRepository.countOverpassAllByStatus(StatusLight.OFF));
+		obj.setOverpassAll(dashboardRepository.countOverpassAll(u.getGroupId()));
+		obj.setOverpassByZone(dashboardRepository.countOverpassByZone(u.getGroupId()));
+		obj.setOverpassOffByMonth(dashboardRepository.getOverpassByMonth(StatusLight.OFF, u.getGroupId()));
+		obj.setOverpassOnByMonth(dashboardRepository.getOverpassByMonth(StatusLight.ON, u.getGroupId()));
+		obj.setOverpassOn(dashboardRepository.countOverpassAllByStatus(StatusLight.ON, u.getGroupId()));
+		obj.setOverpassOff(dashboardRepository.countOverpassAllByStatus(StatusLight.OFF, u.getGroupId()));
+		obj.setDonutChart(dashboardRepository.getDataDonutChart(u.getGroupId()));
+		obj.setOverpassOnMax(dashboardRepository.getMaxOverpassByStatus(u.getGroupId(), StatusLight.ON));
+		obj.setOverpassOffMax(dashboardRepository.getMaxOverpassByStatus(u.getGroupId(), StatusLight.OFF));
+		int overall = (obj.getOverpassAll().containsKey("cnt") && obj.getOverpassAll().get("cnt") != null && obj.getOverpassAll().get("cnt") != "") ? Integer.parseInt(obj.getOverpassAll().get("cnt").toString()) : 0;
+		obj.setOverpassOffAverage(overall * obj.getOverpassOffMax() / 100);
 		return obj;
 	}
 	
 	@Override
-	public boolean validateOverpass() {
+	public List<Integer> validateOverpass() {
+		List<Integer> result = new ArrayList<>();
 		try {
-			boolean chk = false;
+			
 			List<Overpass> overpasses = overpassRepository.getOverpassesByStatus(Status.ACTIVE);
 			Map<String, String> overpassLastStatus = overpassRepository.getLastStatusOverpassStatus();
 			for(Overpass o : overpasses) {
@@ -115,19 +137,28 @@ public class DashboardServiceImpl implements DashboardService {
 						
 						SmartLightResponse res = light.getResponse().get(0);
 						OverpassStatus overpass = new OverpassStatus();
-						overpass.setOverpassId(res.getIdOverpass());
-						overpass.setEffectiveDate(res.getTimestamp());
+						overpass.setOverpassId(res.getIdOverpass());  
+						Date parsedDate;
+						Timestamp timestamp;
+						try {
+							SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+						    parsedDate = dateFormat.parse(res.getTimestamp());
+						    timestamp = new java.sql.Timestamp(parsedDate.getTime());
+						    overpass.setEffectiveDate(timestamp);
+						} catch (ParseException e) {
+							overpass.setEffectiveDate(new Timestamp(System.currentTimeMillis()));
+						}
 						overpass.setWatt(res.getWatt());
 						Double w = 0.0;
 						if(StatusLight.ON.name().equals(res.getStatus().toUpperCase()) && res.getWatt() < (o.getLightBulbCnt() * o.getLightBulb().getWatt())) {
 							w = o.getLightBulbCnt() * o.getLightBulb().getWatt();
 							overpass.setStatus(StatusLight.WARNING);
-							overpass.setEffectiveDate(new Timestamp(System.currentTimeMillis()));
 						}else if(StatusLight.ON.name().equals(res.getStatus().toUpperCase())) {
 							overpass.setStatus(StatusLight.ON);
 						}else if(StatusLight.OFF.name().equals(res.getStatus().toUpperCase())) {
 							overpass.setStatus(StatusLight.OFF);
 						}
+						Map<String, MessageToNotify> messageToNotifys = new HashMap<>();
 						if(overpassLastStatus.isEmpty() || (overpassLastStatus.containsKey(res.getIdOverpass()) && !overpassLastStatus.get(res.getIdOverpass()).equals(overpass.getStatus().name()))) {
 							overpass.setActive("Y");
 							overpass.setDistrict(o.getDistrictName());
@@ -140,26 +171,32 @@ public class DashboardServiceImpl implements DashboardService {
 							overpass.setMapUrl(mapUrl);
 							overpass.setId("" + res.getId());
 							
-							
-							chk = true;
 							MessageToNotify messageNotify = getMessageToNotify(overpass, o.getProvince(), w);
 							overpassRepository.updateActiveOverpassStatus(overpass.getOverpassId());
 							overpass.setTopic(messageNotify.getTopic());
 							overpass.setLocationDisplay(messageNotify.getLocation());
+							Integer seq = dashboardRepository.getSeqOverpassStatusByOverpassIdAndStatus(overpass.getId(), overpass.getStatus());
+							seq = (seq == null) ? 1 : seq;
+							overpass.setSeq(seq);
 							overpassRepository.insertOverpassStatus(overpass);
 							senNotificationToLine(o.getId(), messageNotify);
 							sendNotifyToWeb(o.getId(), messageNotify);
-							o.setOverpassStatus(overpass.getStatus().name());
-							o.setSetpointWatt(res.getWatt());
+							messageToNotifys.put(overpass.getOverpassId(), messageNotify);
+							//o.setOverpassStatus(overpass.getStatus().name());
+							//o.setSetpointWatt(res.getWatt());
+							List<GroupOverpass> groups = mappingOverpassRepository.getGroupByOverpassId(o.getId());
+							for(GroupOverpass group : groups) {
+								result.add(group.getId());
+							}
 						}
+						sendEmail(messageToNotifys);
 					}
 				}
 			}
-			return chk;
 		}catch(Exception ex) {
 			log.error(ex.getMessage());
 		}
-		return false;
+		return result;
 	}
 
 	private void senNotificationToLine(String overpassId, MessageToNotify messageNotify){
@@ -220,6 +257,8 @@ public class DashboardServiceImpl implements DashboardService {
 				noti.setTopic("แจ้งเตือนหลอดไฟดับ ");
 			}else if(StatusLight.WARNING.equals(overpass.getStatus())){
 				noti.setTopic("แจ้งเตือนพลังงานไฟลดลง " + overpass.getWatt() + " < " + watt + " watt");
+			}else if(StatusLight.ON.equals(overpass.getStatus())){
+				noti.setTopic("แจ้งเตือนหลอดไฟเปิด ");
 			}
 			String location = "";
 			if(provinceId == 1) {
@@ -251,6 +290,51 @@ public class DashboardServiceImpl implements DashboardService {
 			
 			return noti;
 		}catch(Exception ex) {
+			throw ex;
+		}
+	}
+
+	@Override
+	public Dashboard getDataDashBoard(Integer groupId) {
+		Dashboard obj = new Dashboard();
+		obj.setOverpassAll(dashboardRepository.countOverpassAll(groupId));
+		obj.setOverpassByZone(dashboardRepository.countOverpassByZone(groupId));
+		obj.setOverpassOffByMonth(dashboardRepository.getOverpassByMonth(StatusLight.OFF, groupId));
+		obj.setOverpassOnByMonth(dashboardRepository.getOverpassByMonth(StatusLight.ON, groupId));
+		obj.setOverpassOn(dashboardRepository.countOverpassAllByStatus(StatusLight.ON, groupId));
+		obj.setOverpassOff(dashboardRepository.countOverpassAllByStatus(StatusLight.OFF, groupId));
+		obj.setDonutChart(dashboardRepository.getDataDonutChart(groupId));
+		obj.setOverpassOnMax(dashboardRepository.getMaxOverpassByStatus(groupId, StatusLight.ON));
+		obj.setOverpassOffMax(dashboardRepository.getMaxOverpassByStatus(groupId, StatusLight.OFF));
+		int overall = (obj.getOverpassAll().containsKey("cnt") && obj.getOverpassAll().get("cnt") != null && obj.getOverpassAll().get("cnt") != "") ? Integer.parseInt(obj.getOverpassAll().get("cnt").toString()) : 0;
+		obj.setOverpassOffAverage(overall * obj.getOverpassOffMax() / 100);
+		return obj;
+	}
+	
+	private void sendEmail(Map<String, MessageToNotify> obj) {
+		try {
+			for(Map.Entry<String, MessageToNotify> item : obj.entrySet()) {
+				List<GroupOverpass> list = mappingOverpassRepository.getGroupByOverpassId(item.getKey());
+				for(GroupOverpass group : list) {
+					String subject = item.getValue().getTopic();
+					String body = item.getValue().getTopic();
+					body += "\n\n              ";
+					body += "สถานที่ : " + item.getValue().getLocation();
+					if(!StringUtil.isNullOrEmpty(item.getValue().getNote())) {
+						body += "\n              ";
+						body += "Note : " + item.getValue().getNote();
+					}
+					body += "\n              ";
+					body += "วันเวลาที่ได้รับแจ้ง : " + item.getValue().getTimeToHang();
+					body += "\n              ";
+					body += "พิกัด : " + item.getValue().getCoordinate();
+					body += "\n\n";
+		 			emailService.sendSimpleMessage(group.getEmail(), subject, body);
+				}
+			}
+			
+		}catch(Exception ex) {
+			log.error(ex.getMessage());
 			throw ex;
 		}
 	}

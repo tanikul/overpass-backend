@@ -1,5 +1,6 @@
 package com.overpass.model;
 
+import java.util.List;
 import java.util.Map;
 
 import lombok.Getter;
@@ -15,4 +16,8 @@ public class Dashboard {
 	private Map<String, Object> overpassOffByMonth;
 	private Map<String, Object> overpassOn;
 	private Map<String, Object> overpassOff;
+	private List<Map<String, Object>> donutChart;
+	public Integer overpassOnMax;
+	public Integer overpassOffMax;
+	public Integer overpassOffAverage;
 }

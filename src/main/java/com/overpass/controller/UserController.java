@@ -32,6 +32,11 @@ public class UserController {
 		return userService.getUserById(id);
 	}
 	
+	@GetMapping("/getUserByAuthen")
+	public User getUser(Authentication authentication) {
+		return userService.getUser(authentication);
+	}
+	
 	@PostMapping("/searchUser")
 	public ResponseDataTable<User> searchUser(@RequestBody SearchDataTable<User> data, Authentication authentication) throws Exception{
 		return userService.searchUser(data, authentication);
@@ -68,5 +73,10 @@ public class UserController {
 	@PostMapping("/changePassword")
 	public void changePassword(Authentication authentication, String newPassword) {
 		userService.changePassword(authentication, newPassword);
+	}
+	
+	@PostMapping("/updateUserProfile")
+	public void updateUserProfile(@RequestBody User data, Authentication authentication){
+		userService.updateUserProfile(data, authentication);
 	}
 }

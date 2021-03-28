@@ -110,14 +110,16 @@ public class MappingOverpassRepositoryImpl implements MappingOverpassRepository 
 		KeyHolder keyHolder = new GeneratedKeyHolder();
 		try {
 			StringBuilder sql = new StringBuilder();
-			sql.append("insert into group_overpass (group_name, create_dt, update_dt, create_by, update_by)");
-			sql.append(" values(?, NOW(), NOW(), ?, ? )");
+			sql.append("insert into group_overpass (group_name, create_dt, update_dt, create_by, update_by, email, line_noti_token)");
+			sql.append(" values(?, NOW(), NOW(), ?, ?, ?, ? )");
 			jdbcTemplate.update(new PreparedStatementCreator() {
 			    public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
 			    	PreparedStatement statement = connection.prepareStatement(sql.toString(), Statement.RETURN_GENERATED_KEYS);
 			    	statement.setString(1, data.getGroupName());
 			    	statement.setInt(2, data.getCreateBy());
 			    	statement.setInt(3, data.getUpdateBy());
+			    	statement.setString(4, data.getEmail());
+			    	statement.setString(5, data.getLineNotiToken());
 			        return statement;
 			      }
 			    },  keyHolder);
@@ -151,11 +153,11 @@ public class MappingOverpassRepositoryImpl implements MappingOverpassRepository 
 	}
 
 	@Override
-	public boolean deleteMapGroupAndOverpassByGroupId(int id) {
+	public void deleteMapGroupAndOverpassByGroupId(int id) {
 		try {
 			StringBuilder sql = new StringBuilder();
 			sql.append("delete from map_group_overpass where group_id = ?");
-			return jdbcTemplate.update(sql.toString(), new Object[] { id }) == 1;  
+			jdbcTemplate.update(sql.toString(), new Object[] { id });  
 		} catch(Exception ex) {
 	    	throw ex;
 	    }
@@ -195,7 +197,7 @@ public class MappingOverpassRepositoryImpl implements MappingOverpassRepository 
 	public List<SearchGroupOverpass> getOverPassByGroupId(int groupId) {
 		try {
 			StringBuilder sql = new StringBuilder();
-			sql.append("select o.id overpass_id, g.id group_id, g.group_name, o.setpoint_watt, o.name, o.latitude, o.longtitude, o.location, o.district, o.amphur, o.province, o.postcode, d.district_name, a.amphur_name, p.province_name from map_group_overpass m ");
+			sql.append("select o.id overpass_id, g.id group_id, g.group_name, g.line_noti_token, g.email, o.setpoint_watt, o.name, o.latitude, o.longtitude, o.location, o.district, o.amphur, o.province, o.postcode, d.district_name, a.amphur_name, p.province_name from map_group_overpass m ");
 			sql.append(" inner join group_overpass g on g.id = m.group_id ");
 			sql.append(" inner join overpass o on m.overpass_id = o.id ");
 			sql.append(" left join district d on d.district_id = o.district");
@@ -215,6 +217,8 @@ public class MappingOverpassRepositoryImpl implements MappingOverpassRepository 
 					o.setProvinceName(rs.getString("province_name"));
 					o.setAmphurName(rs.getString("amphur_name"));
 					o.setDistrictName(rs.getString("district_name"));
+					o.setLineNotifyToken(rs.getString("line_noti_token"));
+					o.setEmail(rs.getString("email"));
 					return o;
 				}
 			}, new Object[]{ groupId });
@@ -328,7 +332,7 @@ public class MappingOverpassRepositoryImpl implements MappingOverpassRepository 
 	public List<GroupOverpass> getGroupByOverpassId(String overpassId) {
 		try {
 			StringBuilder sql = new StringBuilder();
-			sql.append("select g.id, g.group_name, g.line_noti_token from map_group_overpass m inner join group_overpass g on m.group_id = g.id where m.overpass_id = ?");
+			sql.append("select g.id, g.group_name, g.email, g.line_noti_token from map_group_overpass m inner join group_overpass g on m.group_id = g.id where m.overpass_id = ?");
 			return jdbcTemplate.query(sql.toString(), new RowMapper<GroupOverpass>(){
 	
 				@Override
@@ -337,12 +341,35 @@ public class MappingOverpassRepositoryImpl implements MappingOverpassRepository 
 					o.setId(rs.getInt("id"));
 					o.setGroupName(rs.getString("group_name"));
 					o.setLineNotiToken(rs.getString("line_noti_token"));
+					o.setEmail(rs.getString("email"));
 					return o;
 				}
 			}, new Object[]{ overpassId });
 		} catch (EmptyResultDataAccessException e) {
 	        return null;
 	    } catch(Exception ex) {
+	    	throw ex;
+	    }	
+	}
+
+	@Override
+	public void updateGroupOverpass(GroupOverpass data) {
+		try {
+			StringBuilder sql = new StringBuilder();
+			sql.append("update group_overpass set group_name = ?, line_noti_token = ?, email = ?, update_dt = NOW(), update_by = ? where id = ?");
+			jdbcTemplate.execute(sql.toString(),new PreparedStatementCallback<Boolean>(){  
+			 
+				@Override
+				public Boolean doInPreparedStatement(PreparedStatement ps) throws SQLException, DataAccessException {
+					ps.setString(1, data.getGroupName());
+					ps.setString(2, data.getLineNotiToken());
+					ps.setString(3, data.getEmail());
+					ps.setInt(4, data.getUpdateBy());
+					ps.setInt(5, data.getId());
+					return ps.execute();
+				}  
+			});  
+		} catch(Exception ex) {
 	    	throw ex;
 	    }	
 	}

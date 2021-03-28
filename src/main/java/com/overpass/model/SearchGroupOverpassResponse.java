@@ -11,5 +11,7 @@ public class SearchGroupOverpassResponse {
 
 	private String groupName;
 	private int groupId;
+	private String lineNotifyToken;
+	private String email;
 	private List<Overpass> overpasses; 
 }

@@ -274,8 +274,26 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 		StringBuilder sql = new StringBuilder();
 		sql.append("delete from overpass where id = ?");
 		jdbcTemplate.execute(sql.toString(),new PreparedStatementCallback<Boolean>(){  
-		 
-
+			@Override
+			public Boolean doInPreparedStatement(PreparedStatement ps) throws SQLException, DataAccessException {
+				ps.setString(1, id);
+				return ps.execute();
+			}  
+		});  
+		
+		sql = new StringBuilder();
+		sql.append("delete from overpass_status where overpass_id = ?");
+		jdbcTemplate.execute(sql.toString(),new PreparedStatementCallback<Boolean>(){  
+		 	@Override
+			public Boolean doInPreparedStatement(PreparedStatement ps) throws SQLException, DataAccessException {
+				ps.setString(1, id);
+				return ps.execute();
+			}  
+		});  
+		
+		sql = new StringBuilder();
+		sql.append("delete from map_group_overpass where overpass_id = ?");
+		jdbcTemplate.execute(sql.toString(),new PreparedStatementCallback<Boolean>(){  
 			@Override
 			public Boolean doInPreparedStatement(PreparedStatement ps) throws SQLException, DataAccessException {
 				ps.setString(1, id);
@@ -356,8 +374,8 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 	public void insertOverpassStatus(OverpassStatus overpass) {
 		try {
 			StringBuilder sql = new StringBuilder();
-			sql.append("insert into overpass_status (overpass_id, watt, status, effective_date, active, id, location, district, amphur, province, latitude, longtitude, map_url, topic, location_display)");
-			sql.append(" values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+			sql.append("insert into overpass_status (overpass_id, watt, status, effective_date, active, id, location, district, amphur, province, latitude, longtitude, map_url, topic, location_display, seq)");
+			sql.append(" values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 			jdbcTemplate.execute(sql.toString(),new PreparedStatementCallback<Boolean>(){  
 			 
 	
@@ -378,6 +396,7 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 					ps.setString(13, overpass.getMapUrl());
 					ps.setString(14, overpass.getTopic());
 					ps.setString(15, overpass.getLocationDisplay());
+					ps.setInt(16, overpass.getSeq());
 					return ps.execute();
 				}  
 			});  
@@ -559,7 +578,7 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 	public List<OverpassStatus> getOverpassStatusByGroupId(String groupId) {
 		try {
 			StringBuilder sql = new StringBuilder();
-			sql.append("select o.* from overpass_status o inner join map_group_overpass m on o.overpass_id = m.overpass_id and m.group_id = ? order by o.effective_date desc");
+			sql.append("select o.* from overpass_status o inner join map_group_overpass m on o.overpass_id = m.overpass_id and m.group_id = ? and o.status != 'ON' order by o.effective_date desc");
 			
 			return jdbcTemplate.query(sql.toString(), new RowMapper<OverpassStatus>(){
 	

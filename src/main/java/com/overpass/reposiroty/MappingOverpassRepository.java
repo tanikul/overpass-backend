@@ -17,10 +17,11 @@ public interface MappingOverpassRepository {
 	public List<Overpass> getOverPassByUserId(int userId);
 	public List<SearchGroupOverpass> getOverPassByGroupId(int groupId);
 	public List<SearchGroupOverpass> searchMappingOverPass(SearchDataTable<GroupOverpass> data);
-	public boolean deleteMapGroupAndOverpassByGroupId(int id);
+	public void deleteMapGroupAndOverpassByGroupId(int id);
 	public void deleteGroupOverpass(int id);
 	public void deleteMapUserAndGroup(int id);
 	public int count(SearchDataTable<GroupOverpass> data);
 	public List<GroupOverpass> getMappingGroupOverPassAll();
 	public List<GroupOverpass> getGroupByOverpassId(String overpassId);
+	public void updateGroupOverpass(GroupOverpass data);
 }

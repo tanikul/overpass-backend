@@ -18,4 +18,5 @@ public interface UserRepository {
 	public User getUserByUsername(String username);
 	public List<User> getUserByRole(String role);
 	public void changePassword(int id, String newPassword);
+	public void updateUserProfile(User user);
 }
