@@ -33,7 +33,7 @@ public class UserRepositoryImpl implements UserRepository {
 	@Override
 	public User checkLogin(String username) {
 		try {
-			return jdbcTemplate.queryForObject("SELECT USERNAME, PASSWORD, u.ROLE, u.GROUP_ID FROM users  u WHERE USERNAME = ? AND u.STATUS = 'ACTIVE'", new RowMapper<User>(){
+			return jdbcTemplate.queryForObject("SELECT USERNAME, PASSWORD, u.ROLE, u.GROUP_ID, FIRST_NAME, LAST_NAME FROM users u WHERE USERNAME = ? AND u.STATUS = 'ACTIVE'", new RowMapper<User>(){
 
 				@Override
 				public User mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -42,6 +42,8 @@ public class UserRepositoryImpl implements UserRepository {
 					user.setPassword(rs.getString("PASSWORD"));
 					user.setRole(rs.getString("ROLE"));
 					user.setGroupId(rs.getInt("GROUP_ID"));
+					user.setFirstName(rs.getString("FIRST_NAME"));
+					user.setLastName(rs.getString("LAST_NAME"));
 					return user;
 				}
 			}, new Object[]{ username });

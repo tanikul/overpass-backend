@@ -15,4 +15,5 @@ public class MessageToNotify {
 	private String timeToHang;
 	private String coordinate;
 	private StatusLight status;
+	private String id;
 }

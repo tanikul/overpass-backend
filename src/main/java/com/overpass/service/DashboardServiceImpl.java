@@ -172,6 +172,7 @@ public class DashboardServiceImpl implements DashboardService {
 							overpass.setId("" + res.getId());
 							
 							MessageToNotify messageNotify = getMessageToNotify(overpass, o.getProvince(), w);
+							messageNotify.setId(overpass.getId());
 							overpassRepository.updateActiveOverpassStatus(overpass.getOverpassId());
 							overpass.setTopic(messageNotify.getTopic());
 							overpass.setLocationDisplay(messageNotify.getLocation());

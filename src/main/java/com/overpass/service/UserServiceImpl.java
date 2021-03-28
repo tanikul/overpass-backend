@@ -39,8 +39,8 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public void inserUser(User user, Authentication authentication) throws Exception {
-		// Fix //
-		String password  = passwordEncoder.encode("1234");
+		String passwordTmp = user.getUsername();
+		String password  = passwordEncoder.encode(user.getUsername());
 		user.setStatus(Status.ACTIVE);
 		user.setPassword(password);
 		User u = userRepository.getUserByUsername(authentication.getName());
@@ -48,6 +48,7 @@ public class UserServiceImpl implements UserService {
 		Utils.getRole(authentication);
 		if(userRepository.countByUsername(user.getUsername()) == 0) {
 			userRepository.inserUser(user);
+			user.setPassword(passwordTmp);
 			senEmail(user);
 		}else {
 			throw new Exception("username duplicate.");

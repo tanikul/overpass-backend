@@ -40,13 +40,13 @@ public class JWTLoginFilter extends AbstractAuthenticationProcessingFilter {
 	    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
 	            Authentication authResult) throws IOException, ServletException {
 	 
-	        System.out.println("JWTLoginFilter.successfulAuthentication:");
+	       // System.out.println("JWTLoginFilter.successfulAuthentication:");
 	 
 	        // Write Authorization to Headers of Response.
 	        TokenAuthenticationService.addAuthentication(response, authResult);
 	 
 	        String authorizationString = response.getHeader("Authorization");
 	 
-	        System.out.println("Authorization String=" + authorizationString);
+	        //System.out.println("Authorization String=" + authorizationString);
 	    }
 }
