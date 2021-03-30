@@ -46,6 +46,7 @@ public class TokenAuthenticationService {
     			.claim("role", payload.get("role"))
     			.claim("overpassGroup", user.getGroupId())
     			.claim("name", user.getFirstName() + " " + user.getLastName())
+    			.claim("imageProfile", user.getImage())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATIONTIME))
                 .signWith(SignatureAlgorithm.HS512, SECRET).compact();
     	JSONObject result = new JSONObject();

@@ -3,11 +3,14 @@ package com.overpass.service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.overpass.common.Constants;
 import com.overpass.common.Constants.Status;
@@ -32,13 +35,16 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private EmailService emailService;
 	
+	@Autowired
+    private FileStorageService fileStorageService;
+	
 	@Override
 	public User getUserById(int id) {
 		return userRepository.getUserById(id);
 	}
 
 	@Override
-	public void inserUser(User user, Authentication authentication) throws Exception {
+	public void inserUser(User user, MultipartFile imageProfile, Authentication authentication) throws Exception {
 		String passwordTmp = user.getUsername();
 		String password  = passwordEncoder.encode(user.getUsername());
 		user.setStatus(Status.ACTIVE);
@@ -47,6 +53,13 @@ public class UserServiceImpl implements UserService {
 		user.setCreateBy(u.getId());
 		Utils.getRole(authentication);
 		if(userRepository.countByUsername(user.getUsername()) == 0) {
+			if(imageProfile != null) {
+				Optional<String> ext = getExtensionByStringHandling(imageProfile.getOriginalFilename());
+				UUID uuid = UUID.randomUUID();
+				String fileName = uuid.toString() + "." + ext.get();
+				fileStorageService.storeFile(imageProfile, fileName);
+				user.setImage(fileName);
+			}
 			userRepository.inserUser(user);
 			user.setPassword(passwordTmp);
 			senEmail(user);
@@ -55,6 +68,13 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
+	private Optional<String> getExtensionByStringHandling(String filename) {
+	    return Optional.ofNullable(filename)
+	      .filter(f -> f.contains("."))
+	      .map(f -> f.substring(filename.lastIndexOf(".") + 1));
+	}
+	
+	
 	@Override
 	public void updateUser(User user, Authentication authentication) {
 		User u = userRepository.getUserByUsername(authentication.getName());

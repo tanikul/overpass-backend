@@ -30,5 +30,6 @@ public class User extends Entity implements Serializable {
 	private String mobileNo;
 	private int groupId;
 	private String groupName;
+	private String image;
 	
 }

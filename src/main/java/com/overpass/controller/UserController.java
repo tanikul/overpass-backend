@@ -1,6 +1,7 @@
 package com.overpass.controller;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
@@ -13,10 +14,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.overpass.common.Constants;
+import com.overpass.common.Constants.Status;
 import com.overpass.model.ResponseDataTable;
 import com.overpass.model.SearchDataTable;
 import com.overpass.model.User;
+import com.overpass.service.FileStorageService;
 import com.overpass.service.UserService;
 
 @RestController
@@ -25,7 +30,6 @@ public class UserController {
 
 	@Autowired
 	private UserService userService;
-	
 	
 	@GetMapping("/{id}")
 	public User getUserById(@PathVariable int id) {
@@ -44,18 +48,64 @@ public class UserController {
 	
 	@PreAuthorize("hasAuthority(T(com.overpass.common.Constants).ADMIN) || hasAuthority(T(com.overpass.common.Constants).SUPER_ADMIN)")
 	@PostMapping("/save")
-	public void insert(@RequestBody User data, Authentication authentication) throws Exception{
+	public void insert(
+			@RequestParam("username") String username,
+			@RequestParam("prefix") String prefix,
+			@RequestParam("firstName") String firstName,
+			@RequestParam("lastName") String lastName,
+			@RequestParam("role") String role,
+			@RequestParam("email") String email,
+			@RequestParam("lineId") String lineId,
+			@RequestParam("mobileNo") String mobileNo,
+			@RequestParam("groupId") int groupId,
+			@RequestParam("status") Status status,
+			@RequestParam(value="imageProfile", required=false) MultipartFile imageProfile,
+			Authentication authentication) throws Exception{
 		try {
-			userService.inserUser(data, authentication);	
+			
+			User data = new User();
+			data.setUsername(username);
+			data.setPrefix(prefix);
+			data.setFirstName(firstName);
+			data.setLastName(lastName);
+			data.setRole(role);
+			data.setEmail(email);
+			data.setLineId(lineId);
+			data.setMobileNo(mobileNo);
+			data.setGroupId(groupId);
+			data.setStatus(status);
+			userService.inserUser(data, imageProfile, authentication);	
 		}catch(Exception ex) {
 			throw ex;
 		}
 		
 	}
 	
+	
 	@PreAuthorize("hasAuthority(T(com.overpass.common.Constants).ADMIN) || hasAuthority(T(com.overpass.common.Constants).SUPER_ADMIN)")
 	@PostMapping("/update")
-	public void update(@RequestBody User data, Authentication authentication){
+	public void update(@RequestParam("username") String username,
+			@RequestParam("prefix") String prefix,
+			@RequestParam("firstName") String firstName,
+			@RequestParam("lastName") String lastName,
+			@RequestParam("role") String role,
+			@RequestParam("email") String email,
+			@RequestParam("lineId") String lineId,
+			@RequestParam("mobileNo") String mobileNo,
+			@RequestParam("groupId") int groupId,
+			@RequestParam("status") Status status,
+			@RequestParam(value="imageProfile", required=false) MultipartFile imageProfile, Authentication authentication){
+		User data = new User();
+		data.setUsername(username);
+		data.setPrefix(prefix);
+		data.setFirstName(firstName);
+		data.setLastName(lastName);
+		data.setRole(role);
+		data.setEmail(email);
+		data.setLineId(lineId);
+		data.setMobileNo(mobileNo);
+		data.setGroupId(groupId);
+		data.setStatus(status);
 		userService.updateUser(data, authentication);
 	}
 	

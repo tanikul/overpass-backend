@@ -2,6 +2,7 @@ package com.overpass;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -11,6 +12,9 @@ import org.springframework.web.client.RestTemplate;
 @SpringBootApplication
 @EnableCaching
 @EnableScheduling
+@EnableConfigurationProperties({
+    FileStorageProperties.class
+})
 public class OverpassApplication {
 
 	public static void main(String[] args) {

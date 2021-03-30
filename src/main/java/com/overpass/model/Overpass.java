@@ -41,4 +41,8 @@ public class Overpass extends Entity {
 	@JsonInclude(Include.NON_NULL)
 	private String overpassStatus;
 	
+	@JsonInclude(Include.NON_NULL)
+	private Double watt;
+	
+	
 }

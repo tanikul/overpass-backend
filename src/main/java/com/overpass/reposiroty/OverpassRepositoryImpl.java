@@ -493,9 +493,10 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 			List<Object> objs = new ArrayList<Object>();
 			StringBuilder sql = new StringBuilder();
 			
-			sql.append("select o.id, o.name, os.status overpass_status, o.location, o.province, o.amphur, o.district, d.district_name, a.amphur_name, p.province_name, o.setpoint_watt, a.postcode, o.latitude, o.longtitude, o.status ");
+			sql.append("select o.id, o.name, os.status overpass_status, os.watt, o.location, o.province, o.amphur, o.district, d.district_name, a.amphur_name, p.province_name, o.setpoint_watt, a.postcode, o.latitude, o.longtitude, o.status, l.watt light_watt, o.light_bulb_cnt ");
 			sql.append(" from users u inner join map_group_overpass m on u.group_id = m.group_id inner join overpass o on o.id = m.overpass_id and o.status = 'ACTIVE' ");
 			sql.append(" left join overpass_status os on o.id = os.overpass_id and active = 'Y'");
+			sql.append(" left join light_bulb l on l.id = o.light_bulb_id");
 			sql.append(" inner join province p on o.province = p.province_id left join amphur a on a.amphur_id = o.amphur left join district d on d.district_id = o.district ");
 			if(provinceId != null && provinceId > 0) {
 				wheres.add("o.province = ?");
@@ -543,6 +544,11 @@ public class OverpassRepositoryImpl implements OverpassRepository {
 					o.setDistrict(rs.getInt("district"));
 					o.setStatus(Status.valueOf(rs.getString("status")));
 					o.setOverpassStatus(rs.getString("overpass_status"));
+					o.setWatt(rs.getDouble("watt"));
+					LightBulb lightBulb = new LightBulb();
+					lightBulb.setWatt(rs.getDouble("light_watt"));
+					o.setLightBulb(lightBulb);
+					o.setLightBulbCnt(rs.getInt("light_bulb_cnt"));
 					return o;
 				}
 			}, objs.toArray());

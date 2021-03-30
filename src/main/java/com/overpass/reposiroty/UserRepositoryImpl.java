@@ -33,7 +33,7 @@ public class UserRepositoryImpl implements UserRepository {
 	@Override
 	public User checkLogin(String username) {
 		try {
-			return jdbcTemplate.queryForObject("SELECT USERNAME, PASSWORD, u.ROLE, u.GROUP_ID, FIRST_NAME, LAST_NAME FROM users u WHERE USERNAME = ? AND u.STATUS = 'ACTIVE'", new RowMapper<User>(){
+			return jdbcTemplate.queryForObject("SELECT USERNAME, PASSWORD, u.ROLE, u.GROUP_ID, FIRST_NAME, LAST_NAME, IMAGE FROM users u WHERE USERNAME = ? AND u.STATUS = 'ACTIVE'", new RowMapper<User>(){
 
 				@Override
 				public User mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -44,6 +44,7 @@ public class UserRepositoryImpl implements UserRepository {
 					user.setGroupId(rs.getInt("GROUP_ID"));
 					user.setFirstName(rs.getString("FIRST_NAME"));
 					user.setLastName(rs.getString("LAST_NAME"));
+					user.setImage(rs.getString("IMAGE"));
 					return user;
 				}
 			}, new Object[]{ username });
@@ -91,8 +92,8 @@ public class UserRepositoryImpl implements UserRepository {
 	public void inserUser(User user) {
 		try {
 			StringBuilder sql = new StringBuilder();
-			sql.append("insert into users (username, password, prefix, first_name, last_name, role, status, email, line_id, mobile_no, create_dt, update_dt, create_by, update_by, group_id)");
-			sql.append(" values(?, ? , ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?, ? )");
+			sql.append("insert into users (username, password, prefix, first_name, last_name, role, status, email, line_id, mobile_no, create_dt, update_dt, create_by, update_by, group_id, image)");
+			sql.append(" values(?, ? , ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?, ?, ? )");
 			jdbcTemplate.execute(sql.toString(),new PreparedStatementCallback<Boolean>(){  
 			 
 	
@@ -111,6 +112,7 @@ public class UserRepositoryImpl implements UserRepository {
 					ps.setInt(11, user.getCreateBy());
 					ps.setInt(12, user.getUpdateBy());
 					ps.setInt(13, user.getGroupId());
+					ps.setString(14, user.getImage());
 					return ps.execute();
 				}  
 			});  

@@ -95,33 +95,37 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 		StringBuilder sql = new StringBuilder();
 		try {
 			sql.append("select " );
-			sql.append("sum(if(month(effective_date) = 1, 1, 0))  AS Jan, ");
-			sql.append("sum(if(month(effective_date) = 2, 1, 0))  AS Feb, ");
-			sql.append("sum(if(month(effective_date) = 3, 1, 0))  AS Mar, ");
-			sql.append("sum(if(month(effective_date) = 4, 1, 0))  AS Apr, ");
-			sql.append("sum(if(month(effective_date) = 5, 1, 0))  AS May, ");
-			sql.append("sum(if(month(effective_date) = 6, 1, 0))  AS Jun, ");
-			sql.append("sum(if(month(effective_date) = 7, 1, 0))  AS Jul, ");
-			sql.append("sum(if(month(effective_date) = 8, 1, 0))  AS Aug, ");
-			sql.append("sum(if(month(effective_date) = 9, 1, 0))  AS Sep, ");
-			sql.append("sum(if(month(effective_date) = 10, 1, 0)) AS Oct, ");
-			sql.append("sum(if(month(effective_date) = 11, 1, 0)) AS Nov, ");
-			sql.append("sum(if(month(effective_date) = 12, 1, 0)) AS `Dec` ");
+			sql.append("sum(if(effective_date = 1, 1, 0))  AS Jan, ");
+			sql.append("sum(if(effective_date = 2, 1, 0))  AS Feb, ");
+			sql.append("sum(if(effective_date = 3, 1, 0))  AS Mar, ");
+			sql.append("sum(if(effective_date = 4, 1, 0))  AS Apr, ");
+			sql.append("sum(if(effective_date = 5, 1, 0))  AS May, ");
+			sql.append("sum(if(effective_date = 6, 1, 0))  AS Jun, ");
+			sql.append("sum(if(effective_date = 7, 1, 0))  AS Jul, ");
+			sql.append("sum(if(effective_date = 8, 1, 0))  AS Aug, ");
+			sql.append("sum(if(effective_date = 9, 1, 0))  AS Sep, ");
+			sql.append("sum(if(effective_date = 10, 1, 0)) AS Oct, ");
+			sql.append("sum(if(effective_date = 11, 1, 0)) AS Nov, ");
+			sql.append("sum(if(effective_date = 12, 1, 0)) AS `Dec` ");
+			sql.append("from (");
+			sql.append("select  o.id, month(s.effective_date)  effective_date ");
 			sql.append("from group_overpass g ");
 			sql.append("inner join map_group_overpass m on g.id = m.group_id "); 
-			sql.append("inner join overpass o on o.status = 'ACTIVE' and m.overpass_id = o.id "); 
-			sql.append("inner join overpass_status s on s.overpass_id = o.id"); 
-			if(status.equals(StatusLight.OFF)) {
-				sql.append(" and s.status in ('OFF', 'WARNING')");
+			sql.append("inner join overpass o on o.status = 'ACTIVE' and m.overpass_id = o.id ");
+			sql.append("inner join overpass_status s on s.overpass_id = o.id and ");
+			if(status.equals(StatusLight.ON)) {
+				sql.append("s.status in ('ON') "); 
 			}else {
-				sql.append(" and s.status = 'ON'");
+				sql.append("s.status in ('OFF', 'WARNING')  "); 
 			}
-			sql.append(" where g.id = ? ");
-			if(status.equals(StatusLight.OFF)) {
-				sql.append(" and s.id not in (select id from overpass_status where seq = 1 and status = 'OFF') ");
+			sql.append("where g.id = ? "); 
+			if(status.equals(StatusLight.ON)) {
+				sql.append("and s.overpass_id not in (select overpass_id from overpass_status where seq > 1 and status = 'OFF' union select overpass_id from overpass_status where seq = 1 and status = 'WARNING')");
 			}else {
-				sql.append(" and s.overpass_id not in (select overpass_id from overpass_status where seq > 1 and status = 'OFF' union select overpass_id from overpass_status where seq = 1 and status = 'WARNING')");
+				sql.append("and s.overpass_id in (select overpass_id from overpass_status where seq > 1 and status = 'OFF' union select overpass_id from overpass_status where seq = 1 and status = 'WARNING')");
 			}
+			sql.append(" group by o.id, month(s.effective_date)) a ");
+			
 			return jdbcTemplate.queryForMap(sql.toString(), new Object[] { groupId });
 		} catch (EmptyResultDataAccessException e) {
 	        return null;
@@ -198,7 +202,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 	public Integer getMaxOverpassByStatus(int groupId, StatusLight status) {
 		StringBuilder sql = new StringBuilder();
 		try {
-			sql.append("select count(*) cnt " );
+			sql.append("select count(0) from (select count(*) cnt " );
 			sql.append("from group_overpass g ");
 			sql.append("inner join map_group_overpass m on g.id = m.group_id "); 
 			sql.append("inner join overpass o on o.status = 'ACTIVE' and m.overpass_id = o.id "); 
@@ -210,10 +214,12 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 			}
 			sql.append(" where g.id = ? ");
 			if(status.equals(StatusLight.OFF)) {
-				sql.append(" and s.id not in (select id from overpass_status where seq = 1 and status = 'OFF') ");
+				//sql.append(" and s.id not in (select id from overpass_status where seq = 1 and status = 'OFF') ");
+				sql.append(" and s.overpass_id in (select overpass_id from overpass_status where seq > 1 and status = 'OFF' union select overpass_id from overpass_status where seq = 1 and status = 'WARNING')");
 			}else {
-				sql.append(" and s.overpass_id not in (select overpass_id from overpass_status where seq > 1 and status = 'OFF' union select overpass_id from overpass_status where seq = 1 and status = 'WARNING')");
+				//sql.append(" and s.overpass_id not in (select overpass_id from overpass_status where seq > 1 and status = 'OFF' union select overpass_id from overpass_status where seq = 1 and status = 'WARNING')");
 			}
+			sql.append("  group by o.id) a ");
 			return jdbcTemplate.queryForObject(sql.toString(), Integer.class, new Object[] { groupId });
 		} catch (EmptyResultDataAccessException e) {
 	        return 0;
