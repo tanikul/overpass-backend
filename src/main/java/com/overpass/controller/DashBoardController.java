@@ -24,7 +24,7 @@ import com.overpass.service.DashboardService;
 import com.overpass.service.EmailService;
 
 @RestController
-@RequestMapping("/apis/dashboard")
+@RequestMapping("/api/dashboard")
 public class DashBoardController {
 
 	@Autowired
