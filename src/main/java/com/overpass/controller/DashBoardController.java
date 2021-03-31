@@ -24,7 +24,7 @@ import com.overpass.service.DashboardService;
 import com.overpass.service.EmailService;
 
 @RestController
-@RequestMapping("/api/dashboard")
+@RequestMapping("/apis/dashboard")
 public class DashBoardController {
 
 	@Autowired
@@ -40,8 +40,33 @@ public class DashBoardController {
 	@GetMapping("/test")
 	@ResponseBody
 	public Dashboard test(Authentication authentication) throws JsonMappingException, JsonProcessingException{
+		
+		User user = new User();
+		user.setUsername("xxx");
+		user.setPassword("cccc");
+		user.setFirstName("firstName");
+		user.setLastName("vvvvv");
+		user.setEmail("tanikul.sa@gmail.com");
+		//senEmail(user);
 		return dashboardService.getDataDashBoard(authentication);
 	}
 	
-	
+	private void senEmail(User user) {
+		try {
+			String subject = "แจ้งการลงทะเบียนกับระบบ Smart Light Bangkok";
+			String body = "เรียนคุณ " + user.getFirstName() + " " + user.getLastName();
+			body += "\n\n              ";
+			body += "ระบบได้ทำการลงทะเบียนให้คุณแล้ว โดยใช้";
+			body += "\n                ";
+			body += "username : " + user.getUsername();
+			body += "\n                ";
+			body += "password : " + user.getPassword();
+			body += "\n\n";
+			//body += "ขอบคุณครับ";
+ 			emailService.sendSimpleMessage(user.getEmail(), subject, body);
+		}catch(Exception ex) {
+			//log.error(ex.getMessage());
+			throw ex;
+		}
+	}
 }
