@@ -175,9 +175,8 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 			sql.append("group_overpass g ");
 			sql.append("inner join map_group_overpass m on g.id = m.group_id ");
 			sql.append("inner join overpass o on m.overpass_id = o.id ");
-			sql.append("inner join overpass_status s on o.id = s.overpass_id and s.`status` in ('OFF', 'WARNING') ");
+			sql.append("inner join overpass_status s on o.id = s.overpass_id and s.`status` in ('OFF', 'WARNING') and s.ACTIVE = 'Y' ");
 			sql.append("where o.`status` = 'ACTIVE' and o.province = 1 and g.id = ? ");
-			sql.append(" and s.id not in (select id from overpass_status where seq = 1 and status = 'OFF') ");
 			sql.append("group by s.amphur, o.amphur");
 			return jdbcTemplate.queryForList(sql.toString(), new Object[] { groupId });
 		}catch(Exception ex) {
