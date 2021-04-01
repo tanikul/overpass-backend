@@ -29,7 +29,7 @@ public class SchedulerTask {
 
     private static SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
 
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 60000)
     public void sendMessageToClient() {
     	List<Integer> list = dashboardService.validateOverpass();
     	if(!list.isEmpty()) {
