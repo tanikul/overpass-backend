@@ -1,5 +1,6 @@
 package com.overpass.model;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -19,5 +20,5 @@ public class Dashboard {
 	private List<Map<String, Object>> donutChart;
 	public Integer overpassOnMax;
 	public Integer overpassOffMax;
-	public Integer overpassOffAverage;
+	public BigDecimal overpassOffAverage;
 }

@@ -1,5 +1,6 @@
 package com.overpass.service;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -106,9 +107,9 @@ public class DashboardServiceImpl implements DashboardService {
 		obj.setOverpassOffMax(dashboardRepository.getMaxOverpassByStatus(u.getGroupId(), StatusLight.OFF));
 		int overall = (obj.getOverpassAll().containsKey("cnt") && obj.getOverpassAll().get("cnt") != null && obj.getOverpassAll().get("cnt") != "") ? Integer.parseInt(obj.getOverpassAll().get("cnt").toString()) : 0;
 		if(overall == 0) {
-			obj.setOverpassOffAverage(0);
+			obj.setOverpassOffAverage(BigDecimal.ZERO);
 		}else {
-			obj.setOverpassOffAverage(obj.getOverpassOffMax() / overall *  100);
+			obj.setOverpassOffAverage(new BigDecimal(obj.getOverpassOffMax()).divide(new BigDecimal(overall)).multiply(new BigDecimal(100)).setScale(2, BigDecimal.ROUND_HALF_EVEN));
 		}
 		return obj;
 	}
@@ -312,7 +313,11 @@ public class DashboardServiceImpl implements DashboardService {
 		obj.setOverpassOnMax(dashboardRepository.getMaxOverpassByStatus(groupId, StatusLight.ON));
 		obj.setOverpassOffMax(dashboardRepository.getMaxOverpassByStatus(groupId, StatusLight.OFF));
 		int overall = (obj.getOverpassAll().containsKey("cnt") && obj.getOverpassAll().get("cnt") != null && obj.getOverpassAll().get("cnt") != "") ? Integer.parseInt(obj.getOverpassAll().get("cnt").toString()) : 0;
-		obj.setOverpassOffAverage(overall * obj.getOverpassOffMax() / 100);
+		if(overall == 0) {
+			obj.setOverpassOffAverage(BigDecimal.ZERO);
+		}else {
+			obj.setOverpassOffAverage(new BigDecimal(obj.getOverpassOffMax()).divide(new BigDecimal(overall)).multiply(new BigDecimal(100)).setScale(2, BigDecimal.ROUND_HALF_EVEN));
+		}
 		return obj;
 	}
 	
