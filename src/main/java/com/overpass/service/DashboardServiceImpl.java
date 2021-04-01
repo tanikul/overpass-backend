@@ -105,7 +105,7 @@ public class DashboardServiceImpl implements DashboardService {
 		obj.setOverpassOnMax(dashboardRepository.getMaxOverpassByStatus(u.getGroupId(), StatusLight.ON));
 		obj.setOverpassOffMax(dashboardRepository.getMaxOverpassByStatus(u.getGroupId(), StatusLight.OFF));
 		int overall = (obj.getOverpassAll().containsKey("cnt") && obj.getOverpassAll().get("cnt") != null && obj.getOverpassAll().get("cnt") != "") ? Integer.parseInt(obj.getOverpassAll().get("cnt").toString()) : 0;
-		obj.setOverpassOffAverage(overall * obj.getOverpassOffMax() / 100);
+		obj.setOverpassOffAverage(obj.getOverpassOffMax() / overall *  100);
 		return obj;
 	}
 	

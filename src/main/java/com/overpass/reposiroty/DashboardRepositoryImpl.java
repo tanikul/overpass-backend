@@ -47,7 +47,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 			sql.append("select 1 cnt from group_overpass g ");
 			sql.append("inner join map_group_overpass m on g.id = m.group_id ");
 			sql.append("inner join overpass o on o.status = 'ACTIVE' and m.overpass_id = o.id ");
-			sql.append("left join overpass_status s on s.overpass_id = o.id and s.active = 'Y' where g.id = ? ");
+			sql.append("inner join overpass_status s on s.overpass_id = o.id and s.active = 'Y' where g.id = ? ");
 			sql.append(") a");
 			return jdbcTemplate.queryForMap(sql.toString(), new Object[] { groupId });
 		}catch(Exception ex) {
