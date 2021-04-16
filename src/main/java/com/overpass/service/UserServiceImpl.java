@@ -104,9 +104,10 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public void changePassword(Authentication authentication, String newPassword) {
 		User u = userRepository.getUserByUsername(authentication.getName());
+		String tmpPassword = newPassword;
 		newPassword  = passwordEncoder.encode(newPassword);
 		userRepository.changePassword(u.getId(), newPassword);
-		u.setPassword(newPassword);
+		u.setPassword(tmpPassword);
 		senEmailChangePassword(u);
 	}
 
