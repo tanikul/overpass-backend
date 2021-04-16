@@ -106,7 +106,8 @@ public class UserServiceImpl implements UserService {
 		User u = userRepository.getUserByUsername(authentication.getName());
 		newPassword  = passwordEncoder.encode(newPassword);
 		userRepository.changePassword(u.getId(), newPassword);
-		
+		u.setPassword(newPassword);
+		senEmailChangePassword(u);
 	}
 
 	@Override
@@ -129,6 +130,25 @@ public class UserServiceImpl implements UserService {
 			String body = "เรียนคุณ " + user.getFirstName() + " " + user.getLastName();
 			body += "\n\n              ";
 			body += "ระบบได้ทำการลงทะเบียนให้คุณแล้ว โดยใช้";
+			body += "\n                ";
+			body += "username : " + user.getUsername();
+			body += "\n                ";
+			body += "password : " + user.getPassword();
+			body += "\n\n";
+			//body += "ขอบคุณครับ";
+ 			emailService.sendSimpleMessage(user.getEmail(), subject, body);
+		}catch(Exception ex) {
+			log.error(ex.getMessage());
+			throw ex;
+		}
+	}
+	
+	private void senEmailChangePassword(User user) {
+		try {
+			String subject = "แจ้งการเปลี่ยนพาสเวิร์ดกับระบบ Smart Light Bangkok";
+			String body = "เรียนคุณ " + user.getFirstName() + " " + user.getLastName();
+			body += "\n\n              ";
+			body += "ระบบได้ทำการเปลี่ยนพาสเวิร์ดให้คุณแล้ว โดยใช้";
 			body += "\n                ";
 			body += "username : " + user.getUsername();
 			body += "\n                ";
