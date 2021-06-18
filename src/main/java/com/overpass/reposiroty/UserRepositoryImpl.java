@@ -125,7 +125,7 @@ public class UserRepositoryImpl implements UserRepository {
 	public void updateUser(User user) {
 		try {
 			StringBuilder sql = new StringBuilder();
-			sql.append("update users set prefix = ?, first_name = ?, last_name = ?, role = ?, status = ?, email = ?, line_id = ?, mobile_no = ?, update_dt = NOW(), update_by = ?, group_id = ? where id = ?");
+			sql.append("update users set prefix = ?, first_name = ?, last_name = ?, role = ?, status = ?, email = ?, line_id = ?, mobile_no = ?, update_dt = NOW(), update_by = ?, group_id = ? where username = ?");
 			jdbcTemplate.execute(sql.toString(),new PreparedStatementCallback<Boolean>(){  
 			 
 	
@@ -141,7 +141,7 @@ public class UserRepositoryImpl implements UserRepository {
 					ps.setString(8, user.getMobileNo());
 					ps.setInt(9, user.getUpdateBy());
 					ps.setInt(10, user.getGroupId());
-					ps.setInt(11, user.getId());
+					ps.setString(11, user.getUsername());
 					
 					return ps.execute();
 				}  
