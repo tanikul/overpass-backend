@@ -12,6 +12,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import com.overpass.model.ErrorMessage;
 
+import io.jsonwebtoken.ExpiredJwtException;
+
 import org.springframework.core.Ordered;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -20,7 +22,7 @@ public class RestResponseEntityExceptionHandler
   extends ResponseEntityExceptionHandler {
 
 	
-    @ExceptionHandler(Exception.class)
+	@ExceptionHandler(Exception.class)
     public final ResponseEntity<ErrorMessage> handleAllExceptions(Exception ex, WebRequest request) {
     	ErrorMessage error = new ErrorMessage();
     	error.setCode("9999");
@@ -28,4 +30,23 @@ public class RestResponseEntityExceptionHandler
 
       return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+    
+    @ExceptionHandler(ExpiredJwtException.class)
+    public final ResponseEntity<ErrorMessage> handleExpiredJwtException(ExpiredJwtException ex, WebRequest request) {
+    	ErrorMessage error = new ErrorMessage();
+    	error.setCode("5040103");
+    	error.setMessage("token expire");
+
+      return new ResponseEntity<>(error, HttpStatus.GATEWAY_TIMEOUT);
+    }
+    /*
+    @Override
+    protected ResponseEntity<Object> handleNoHandlerFoundException(NoHandlerFoundException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+    	ErrorMessage error = new ErrorMessage();
+    	error.setCode("5040103");
+    	error.setMessage("token expire");
+    	return new ResponseEntity<>(error, HttpStatus.GATEWAY_TIMEOUT);
+    }*/
+    
+    
 }
