@@ -48,8 +48,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	  };
 	  
 	 //@Bean
-	    CorsFilter corsFilter() {
-	        CorsFilter filter = new CorsFilter();
+	    CorsFilters corsFilter() {
+	        CorsFilters filter = new CorsFilters();
 	        return filter;
 	    }
 

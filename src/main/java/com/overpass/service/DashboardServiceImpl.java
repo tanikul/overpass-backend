@@ -164,7 +164,7 @@ public class DashboardServiceImpl implements DashboardService {
 							overpass.setStatus(StatusLight.OFF);
 						}
 						Map<String, MessageToNotify> messageToNotifys = new HashMap<>();
-						if(overpassLastStatus.isEmpty() || (overpassLastStatus.containsKey(res.getIdOverpass()) && !overpassLastStatus.get(res.getIdOverpass()).equals(overpass.getStatus().name()))) {
+						if(overpassLastStatus.isEmpty() || !overpassLastStatus.containsKey(res.getIdOverpass()) || (overpassLastStatus.containsKey(res.getIdOverpass()) && !overpassLastStatus.get(res.getIdOverpass()).equals(overpass.getStatus().name()))) {
 							overpass.setActive("Y");
 							overpass.setDistrict(o.getDistrictName());
 							overpass.setAmphur(o.getAmphurName());

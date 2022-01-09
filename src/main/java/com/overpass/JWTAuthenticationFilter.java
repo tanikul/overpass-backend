@@ -37,6 +37,7 @@ public class JWTAuthenticationFilter extends GenericFilterBean {
        String origin = request.getHeader("Origin");
        List<String> arr = Arrays.asList(allowedOrigins);
        response.setHeader("Access-Control-Allow-Origin", (arr.contains(origin)) ? origin : "");
+       response.setHeader("Vary", "Origin");
        response.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,PUT,OPTIONS");
        response.setHeader("Access-Control-Allow-Headers", "*");
        response.setHeader("Access-Control-Allow-Credentials", "true");
@@ -52,6 +53,10 @@ public class JWTAuthenticationFilter extends GenericFilterBean {
 	        }
            
         }
-        filterChain.doFilter(servletRequest, response);
+        if ("OPTIONS".equals(request.getMethod())) {
+            response.setStatus(HttpServletResponse.SC_OK);
+        } else { 
+            filterChain.doFilter(request, response);
+        }
    }
 }
