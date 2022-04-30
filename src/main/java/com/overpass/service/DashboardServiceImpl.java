@@ -109,7 +109,7 @@ public class DashboardServiceImpl implements DashboardService {
 		if(overall == 0) {
 			obj.setOverpassOffAverage(BigDecimal.ZERO);
 		}else {
-			obj.setOverpassOffAverage(new BigDecimal(obj.getOverpassOffMax()).divide(new BigDecimal(overall)).multiply(new BigDecimal(100)).setScale(2, BigDecimal.ROUND_HALF_EVEN));
+			obj.setOverpassOffAverage(new BigDecimal(obj.getOverpassOffMax()).divide(new BigDecimal(overall), 8, BigDecimal.ROUND_HALF_EVEN).multiply(new BigDecimal(100)).setScale(2, BigDecimal.ROUND_HALF_UP));
 		}
 		return obj;
 	}
